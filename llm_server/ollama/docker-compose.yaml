@@ -1,0 +1,16 @@
+services:
+  ollama:
+    image: 192.168.161.132:5000/ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ../../../_ollama:/root/.ollama
+    command: ["serve"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']  # Matches indices from host's nvidia-smi
+              capabilities: [gpu]

@@ -1,0 +1,14 @@
+services:
+  python:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: 192.168.161.132:5000/llm_tools:v0
+    container_name: llm_tools
+    working_dir: /app
+    environment:
+      BASE_CFG_PATH: /app/cfgs/cfg.yaml
+    volumes:
+      - ../_huggingface:/root/.cache/huggingface  # for download hf models
+      - ./:/app
+    command: "bash /app/env.sh"

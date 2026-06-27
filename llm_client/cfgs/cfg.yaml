@@ -1,0 +1,79 @@
+llm_chat_cfg:
+  ollama:
+    mod_name: ollama
+    cls_name: OllamaChat
+    args:
+      model_name: "qwen3:0.6b"
+      base_url: "http://172.18.53.104:11434/api/generate"
+
+  vllm:
+    mod_name: vllm
+    cls_name: VLLMChat
+    args:
+      model_name: "qwen3:0.6b"
+      base_url: "http://172.18.53.104:8106/v1"
+
+  google:
+    mod_name: google
+    cls_name: GoogleChatAPI
+    args:
+      api_key: /app/cfgs/api_keys.yaml
+      model_name: "gemini-2.5-flash-lite"
+
+  openai:
+    mod_name: openai
+    cls_name: OpenAIChatAPI
+    args:
+      api_key: /app/cfgs/api_keys.yaml
+      model_name: "gpt-4o-mini"
+  
+  azure_openai:
+    mod_name: azure_openai
+    cls_name: AzureOpenAIChatAPI
+    args:
+      api_key: /app/cfgs/api_keys.yaml
+      model_name: "gpt-4.1-mini"
+  
+  jumphost:
+    mod_name: jump_host
+    cls_name: JumpHostChatAPI
+    args:
+      base_url_sync: http://192.168.161.30:8007/cloud_api
+      base_url_async: http://192.168.161.30:8007/async_cloud_api
+
+
+llm_emb_cfg:
+  ollama:
+    mod_name: ollama
+    cls_name: OllamaEmbedding
+    args:
+      model_name: "qwen3-embedding:0.6b"
+      base_url: "http://172.18.53.104:11434/api/embed"
+  
+  vllm:
+    mod_name: vllm
+    cls_name: VLLMEmbedding
+    args:
+      model_name: "qwen3-embedding:0.6b"
+      base_url: "http://172.18.53.104:8106/v1"
+  
+  google:
+    mod_name: google
+    cls_name: GoogleEmbeddingAPI
+    args:
+      api_key: /app/cfgs/api_keys.yaml
+      model_name: "gemini-embedding-001"
+  
+  openai:
+    mod_name: openai
+    cls_name: OpenAIEmbeddingAPI
+    args:
+      api_key: /app/cfgs/api_keys.yaml
+      model_name: "text-embedding-3-small"
+
+  azure_openai:
+    mod_name: azure_openai
+    cls_name: AzureOpenAIEmbeddingAPI
+    args:
+      api_key: /app/cfgs/api_keys.yaml
+      model_name: "text-embedding-3-small"
