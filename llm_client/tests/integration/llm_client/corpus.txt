@@ -1,0 +1,1141 @@
+Langchain 中的 ConversationSummaryMemory 是每輪對話都summarize一次嗎? 這樣運算時間是不是大約兩倍? (因為每次都要request llm兩次)
+
+這是一個非常精準的觀察。簡單來說：是的，你的理解完全正確。
+
+在使用 ConversationSummaryMemory 時，背後的運作邏輯確實會導致每輪對話的延遲（Latency）與運算成本增加。
+
+1. 運作流程解析
+當你執行 chain.predict(input="...") 時，LangChain 內部實際上進行了兩次 LLM 請求：
+
+總結請求 (Summary Request)： 系統會將「之前的舊摘要」+「剛發生的對話回合」發送給 LLM，要求它產出一個「更新後的摘要」。
+
+主任務請求 (Main Task Request)： 系統將這個「更新後的摘要」放入 Prompt 的 Context 中，連同你的問題再次發送給 LLM，獲取最終回答。
+
+2. 效能與成本的權衡
+這確實帶來了你提到的問題：
+
+回應時間 (Latency)： 雖然不是嚴格意義上的 2 倍（因為總結任務的 Token 數通常較少，生成速度較快），但確實需要等待兩次網路來回，體感延遲會明顯增加。
+
+Token 消耗： 每一輪都要額外花費 Token 來執行總結指令。
+
+3. 有沒有更好的替代方案？
+為了優化你提到的「運算時間」問題，實務上通常會根據情境改用以下幾種做法：
+
+A. ConversationSummaryBufferMemory (最推薦)
+這是兩者的結合。它會先像 ConversationBufferMemory 一樣儲存原始對話，只有當對話長度超過你設定的限制 (max_token_limit) 時，才會觸發 LLM 進行總結。
+
+優點： 短對話時速度極快（只需一次請求）；只有長對話才需要總結。
+
+B. 異步總結 (Asynchronous Summarization)
+如果你是自行開發後端，可以考慮在回傳答案給使用者之後，再讓背景程式去執行總結動作。
+
+優點： 使用者不需要等待總結的時間，下一輪對話時摘要已經更新好了。
+
+C. ConversationTokenBufferMemory
+不進行總結，單純根據 Token 數量剔除最早的對話（滑動窗口）。
+
+優點： 運算最省時，完全不需要額外請求 LLM。
+
+缺點： 由於是直接切斷，LLM 會完全遺忘很久以前的細節。
+
+總結建議
+如果你在意那「兩倍」的請求時間，建議改用 ConversationSummaryBufferMemory。這樣在對話剛開始時，效能與普通對話無異，只有在對話變得很長、必須壓縮空間時，才會犧牲一點時間換取記憶空間。
+
+那GPT的GUI 還有 Gemini的GUI 通常是用哪種memory
+
+GPT 和 Gemini 這種產品級的 GUI，背後使用的記憶機制比 LangChain 的基礎 ConversationSummaryMemory 複雜得多，它們通常是多種技術的混合體。
+
+目前的商業主流（2026年）主要採用的機制如下：
+
+1. ChatGPT (OpenAI) 的做法
+ChatGPT 採用的是「動態滑動窗口 + 個人化長期記憶庫」。
+
+滑動窗口 (Sliding Window)： 對於單次對話，它主要使用 Buffer 方式。當對話長度超過模型限制（例如 GPT-4o 的 128k tokens）時，它會直接丟棄最舊的訊息，或者對較舊的對話進行內部壓縮/總結。
+
+長期記憶 (Memory Feature)： 這就是你在側邊欄或設定中看到的「Memory」。它不是每輪總結，而是模型會「主動擷取」它認為重要的資訊（例如：你喜歡 Python、你有隻 Border Collie），將其存入一個獨立的個人設定檔中。
+
+運算優化： 它不會每輪都呼叫 LLM 去做一次「全對話總結」，因為這太貴且太慢。它更傾向於在背景執行擷取，或者直接利用超大的 Context Window 硬扛。
+
+2. Gemini (Google) 的做法
+Gemini（尤其是 1.5 Pro 系列）目前的策略是「暴力大視窗 + 高效快取 (Context Caching)」。
+
+百萬級視窗 (Massive Context Window)： Gemini 最大的特色是原生支援 1M 甚至 2M 以上的 Token。這意味著在絕大多數情況下，它根本不需要總結，它直接把這幾個月內的所有對話內容「全部丟進去」給模型讀。
+
+Context Caching (脈絡快取)： 為了避免你擔心的「兩倍運算時間」，Google 使用了快取技術。系統會把已經讀過的對話片段（Prefix）快取起來，當你傳新訊息時，模型只需要運算「新訊息」的部分，舊訊息不需要重新計算一遍。
+
+優點： 這種做法最精確，因為模型能看到每一句話的原貌，而不會因為「摘要」而損失細節。
+
+綜合對比表
+特性	LangChain SummaryMemory	GPT GUI	Gemini GUI
+主要機制	每輪強行總結	滑動窗口 + 關鍵點擷取	原始內容全丟 (大視窗)
+延遲感	高 (固定兩次請求)	低 (緩衝區內只需一次)	極低 (有快取技術優化)
+精確度	較低 (細節會遺失)	中高 (近期對話最精確)	極高 (看得到所有歷史)
+適用場景	Token 預算極低的小模型	追求靈活與個人化	處理長文本、大量代碼
+為什麼它們不直接用你說的那種 SummaryMemory？
+使用者體驗： 使用者不能接受每句話都要多等 3-5 秒去讓 AI 做總結。
+
+細節遺失： 總結會像「傳聲筒遊戲」，對話越多輪，最初的細節就越模糊。
+
+成本與規模： 對於擁有數億用戶的產品，每輪多呼叫一次 LLM 代表電費與運算成本直接翻倍，這在商業上是非常不划算的。
+
+一言以蔽之： 這些大型 GUI 傾向於「能硬扛就硬扛（加大視窗），扛不住就丟棄（滑動窗口），重要資訊另外存（長期記憶）」。
+
+你目前的開發項目中，如果是使用自己的 API Key（要算錢），且對話會變得很長，我會建議你選 ConversationSummaryBufferMemory，這是成本與記憶深度之間最平衡的方案。
+
+好呀 那教我ConversationSummaryBufferMemory, 我還想知道細節, 像是它多久summary一次
+
+ConversationSummaryBufferMemory 是 LangChain 中最智能的記憶管理方案之一。它結合了「精確度」與「長度控制」，避免了每輪總結的資源浪費。
+
+1. 核心邏輯：它何時觸發總結？
+它並不是按「時間」或「輪數」來觸發，而是按 Token 數量。
+
+你可以把它想像成一個有「洩洪機制」的水箱：
+
+緩衝區 (Buffer)： 最新的對話會以原始文本的形式儲存在 Buffer 中。
+
+閾值 (max_token_limit)： 你設定一個上限（例如 1000 tokens）。
+
+觸發總結： 只要 Buffer 內的對話總量超過 1000 tokens，它就會把「最舊的那幾輪」拿出來交給 LLM 做總結，並將總結結果併入 moving_summary 中，然後從 Buffer 中刪除原始文本。
+
+2. 程式碼範例
+這裡示範如何設定與觀察它的變化：
+
+Python
+from langchain.memory import ConversationSummaryBufferMemory
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model_name="gpt-4o")
+
+# 設定 max_token_limit，當對話超過這個數量就會觸發總結
+memory = ConversationSummaryBufferMemory(
+    llm=llm, 
+    max_token_limit=300, # 為了示範設小一點
+    return_messages=True
+)
+
+# 模擬對話
+memory.save_context({"input": "你好，我叫 James"}, {"output": "你好 James！很高興認識你。"})
+memory.save_context({"input": "我是一名軟體工程師"}, {"output": "太棒了！工程師的工作內容通常很有趣。"})
+
+# 查看目前的記憶內容
+print(memory.load_memory_variables({}))
+3. 運作細節：總結的精細程度
+關於「多久總結一次」，這裡有三個關鍵細節：
+
+A. 它是「滾動式」的
+當對話觸發總結時，它不會把整個 Buffer 變成一個大摘要，而是會保留「最新」的部分。
+
+摘要部分 (Summary)： 包含所有「被擠出緩衝區」的歷史資訊。
+
+原始部分 (Buffer)： 包含最新的 N 輪對話（確保這幾輪的對話邏輯非常連貫）。
+
+B. 它的請求頻率
+如果你設定 max_token_limit=2000：
+
+在對話達到 2000 token 之前：每次對話只需 1 次 LLM 請求（效能極佳）。
+
+超過 2000 token 之後：每輪對話會變成 2 次請求。因為每一輪新對話進來，都會導致 Buffer 溢位，所以它必須不斷更新摘要來「消化」舊訊息。
+
+C. 如何觀察它是否正在總結？
+你可以透過 memory.moving_summary 來查看目前儲存的摘要內容。如果這個字串還是空的，代表目前對話還在緩衝區內，尚未觸發 LLM 總結。
+
+4. 總結 vs 其他 Memory 的比較表
+特性	BufferMemory	SummaryMemory	SummaryBufferMemory
+總結頻率	從不總結	每輪都總結	Buffer 滿了才開始每輪總結
+運算成本	最低	最高	中 (前期省，後期花)
+歷史保留	易因截斷而遺忘	只有大意，無細節	近期有細節，遠期有大意
+適用場景	短對話	需要極簡摘要	大多數複雜應用首選
+專業建議
+在開發你的 Python 應用時，建議將 max_token_limit 設為模型最大限制的 10%~20%。例如 GPT-4o 支援很長，但為了省錢與速度，你可以設為 2000。這樣可以確保使用者在對話前段感受到極速的回應，且當對話變長時，系統依然能保有先前的上下文精華。
+
+我理解了 但我想問的是
+
+範例中是 langchain_openai.ChatOpenAI 格式的 llm 可以使用
+
+如果我的LLM長以下這樣 也可以使用memory嗎
+
+
+
+class AzureOpenAIChatAPI:
+
+    def __init__(
+
+            self,
+
+            api_key: str,
+
+            model_name: str = "gpt-4.1-mini"
+
+        ):
+
+        self.api_key = api_key
+
+        self.azure_endpoint = f"https://project-emc-llm-foundry.openai.azure.com/openai/deployments/{model_name}/chat/completions?api-version=2024-10-21"
+
+   
+
+    def run(self, prompt: Union[str, List], response_format: Optional[Type] = None) -> str:
+
+        if isinstance(prompt, str):
+
+            messages = [
+
+                {"role": "system", "content": "You are a helpful assistant."},
+
+                {"role": "user", "content": prompt}
+
+            ]
+
+        else:
+
+            messages = prompt
+
+        data = {"messages": messages, "max_tokens": None}
+
+        if response_format:
+
+            data["response_format"] = {
+
+                "type": "json_schema",
+
+                "json_schema": {
+
+                    "name": response_format.__name__,
+
+                    "schema": response_format.model_json_schema()
+
+                }
+
+            }    
+
+        headers = {"api-key": self.api_key, "Content-Type": "application/json"}
+
+        response = requests.post(self.azure_endpoint, headers=headers, json=data)
+
+        return response.json()["choices"][0]['message']['content']
+
+這是一個非常實務的問題。答案是：不能「直接」丟進去，但只要做一點點封裝就能使用。
+
+LangChain 的 Memory 組件（特別是需要調用 LLM 進行總結的 ConversationSummaryMemory）期望傳入的物件必須繼承自 LangChain 的 BaseLanguageModel 或 BaseChatModel。你的 AzureOpenAIChatAPI 是一個自定義類別，雖然功能完整，但它缺乏 LangChain 內部通訊所需的標準介面。
+
+你有兩個方法可以解決這個問題：
+
+方法一：將你的類別封裝成 LangChain 標準格式 (推薦)
+這是最優雅的做法。你只需要繼承 BaseChatModel 並實作 _generate 方法，LangChain 的所有組件（Memory, Chain, Agent）就都能直接認得它。
+
+Python
+from typing import Any, List, Optional, Union, Type
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import BaseMessage, AIMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatResult, ChatGeneration
+import requests
+
+class AzureOpenAIChatLLM(BaseChatModel):
+    api_key: str
+    model_name: str = "gpt-4.1-mini"
+    
+    # 這是你原本的邏輯，稍微改寫以符合標準
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        
+        # 將 LangChain 的 Message 物件轉換回你的 API 格式
+        formatted_messages = []
+        for msg in messages:
+            if isinstance(msg, HumanMessage):
+                formatted_messages.append({"role": "user", "content": msg.content})
+            elif isinstance(msg, AIMessage):
+                formatted_messages.append({"role": "assistant", "content": msg.content})
+            elif isinstance(msg, SystemMessage):
+                formatted_messages.append({"role": "system", "content": msg.content})
+
+        azure_endpoint = f"https://project-emc-llm-foundry.openai.azure.com/openai/deployments/{self.model_name}/chat/completions?api-version=2024-10-21"
+        headers = {"api-key": self.api_key, "Content-Type": "application/json"}
+        data = {"messages": formatted_messages, "max_tokens": None}
+        
+        response = requests.post(azure_endpoint, headers=headers, json=data)
+        text = response.json()["choices"][0]['message']['content']
+        
+        # 包裝成 LangChain 要求的輸出格式
+        message = AIMessage(content=text)
+        generation = ChatGeneration(message=message)
+        return ChatResult(generations=[generation])
+
+    @property
+    def _llm_type(self) -> str:
+        return "azure-openai-custom"
+
+# 現在你可以這樣用了：
+custom_llm = AzureOpenAIChatLLM(api_key="your_key")
+memory = ConversationSummaryBufferMemory(llm=custom_llm, max_token_limit=300)
+方法二：直接使用 LangChain 內建的 AzureOpenAI (最省事)
+既然你已經在使用 Azure OpenAI，LangChain 其實已經幫你寫好對應的類別了，你不需要自己處理 requests.post。
+
+Python
+from langchain_openai import AzureChatOpenAI
+
+llm = AzureChatOpenAI(
+    azure_deployment="你的部署名稱",
+    api_version="2024-10-21",
+    azure_endpoint="https://project-emc-llm-foundry.openai.azure.com/",
+    api_key="your_api_key"
+)
+
+memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=1000)
+為什麼一定要做這種封裝？
+如果你直接把你的 AzureOpenAIChatAPI 丟進 ConversationSummaryBufferMemory(llm=...)，程式會報錯。
+
+原因在於 SummaryMemory 在觸發總結時，會自動去呼叫 llm.predict_messages() 或 llm.generate() 這種標準方法。你的類別裡只有 run() 方法，LangChain 的內部邏輯會找不到進入點。
+
+對於你的專案建議：
+如果你想要最大的控制權： 採用方法一。這讓你可以保留原本處理 response_format (JSON Schema) 的邏輯，同時又能享受 LangChain Memory 的自動總結功能。
+
+如果你只是想快速串接： 採用方法二。官方庫通常對錯誤處理（Retry 機制、Rate Limit）做得比較完善。
+
+你是打算在目前處理醫療 RAG 的專案中加入這個記憶機制嗎？
+
+目前我在自己寫的package
+
+有 __init__.py
+
+還有
+
+base.py如下
+
+
+
+class LLMAPI:
+
+def __init__(self, **kwargs):
+
+raise NotImplementedError
+
+
+
+def run(self, **kwargs) -> str | Dict:
+
+raise NotImplementedError
+
+
+
+及各llm的module 例如 ollama.py
+
+import requests
+
+from typing import List, Dict
+
+
+
+from .base import LLMAPI, llm_postprocess
+
+
+
+
+
+class OllamaChat(LLMAPI):
+
+def __init__(self, model_name: str, base_url: str):
+
+self.model_name = model_name
+
+self.base_url = base_url
+
+
+
+def run(self, prompt: str, response_format: str = "") -> str | Dict:
+
+"""Pydantic response requires <json_str> specified in response_format e.g. '{"score": int}'"""
+
+if response_format:
+
+prompt_ = f"{prompt}\n**Response Format**: Only output a valid json format as below:\n{response_format}"
+
+else:
+
+prompt_ = prompt
+
+payload = {"model": self.model_name, "prompt": prompt_, "stream": False}
+
+response = requests.post(self.base_url, json=payload)
+
+out = response.json()["response"]
+
+out = llm_postprocess(out, to_dict=bool(response_format))
+
+return out
+
+
+
+我想要加一個 function init_model 讓使用者輸入以下這種config
+
+mod_name: ollama
+
+cls_name: OllamaChat
+
+args:
+
+model_name: "qwen3:0.6b"
+
+base_url: "http://localhost:11434/api/generate"
+
+就可以得到OllamaChat 這個class
+
+
+
+我該加在哪個檔案好, 又該怎麼寫?
+
+我剛剛聽說加在__init__.py是facade pattern? 
+
+加在 __init__.py 確實是非常標準且聰明的做法！
+
+你聽到的沒錯，這正是 外觀模式 (Facade Pattern) 的一種實踐。__init__.py 作為套件的入口，把複雜的內部模組結構（例如要從各個不同的檔案 import、動態實例化等）隱藏起來，給使用者一個乾淨、簡單的單一介面 (init_model)。這樣使用者就不需要知道 OllamaChat 到底躲在 ollama.py 還是其他地方。
+
+以下是建議的寫法與檔案配置：
+
+1. 寫法實作
+方案 A：直接在 __init__.py 靜態對照（最推薦：直觀、好維護）
+如果你的 LLM 模組數量是固定的（例如就 3~5 個），直接在 __init__.py 寫一個對照表（Registry）是最安全且 IDE 支援度最好的做法。
+
+修改 __init__.py：
+
+Python
+from typing import Any, Dict
+# 匯入各個模組的 Class
+from .ollama import OllamaChat
+# 假設你未來有其他模組：
+# from .openai import OpenAIChat 
+
+# 建立一個對照表
+_MODEL_MAPPING = {
+    "ollama": {
+        "OllamaChat": OllamaChat,
+    },
+    # "openai": {
+    #     "OpenAIChat": OpenAIChat,
+    # }
+}
+
+def init_model(config: Dict[str, Any]):
+    """
+    依據 Config 動態初始化 LLM 實例
+    config 格式範例:
+    {
+        "mod_name": "ollama",
+        "cls_name": "OllamaChat",
+        "args": {
+            "model_name": "qwen3:0.6b",
+            "base_url": "http://localhost:11434/api/generate"
+        }
+    }
+    """
+    mod_name = config.get("mod_name")
+    cls_name = config.get("cls_name")
+    args = config.get("args", {})
+
+    try:
+        # 1. 找出對應的 Class
+        cls = _MODEL_MAPPING[mod_name][cls_name]
+        # 2. 將 args 解包 (Unpacking) 並實例化帶回
+        return cls(**args)
+    except KeyError:
+        raise ValueError(f"找不到對應的模組或類別: mod_name='{mod_name}', cls_name='{cls_name}'")
+方案 B：使用 importlib 動態載入（適合模組極多、想完全自動化）
+如果你希望未來增加新的 .py 檔時，完全不想回來修改 __init__.py，可以使用 Python 的 importlib 來做動態 import。
+
+修改 __init__.py：
+
+Python
+import importlib
+from typing import Any, Dict
+
+def init_model(config: Dict[str, Any]):
+    mod_name = config.get("mod_name")
+    cls_name = config.get("cls_name")
+    args = config.get("args", {})
+
+    try:
+        # 動態 import 相對路徑下的模組，例如 .ollama
+        # __package__ 會自動取得當前套件名稱
+        module = importlib.import_module(f".{mod_name}", package=__package__)
+        # 從模組中取得該 Class
+        cls = getattr(module, cls_name)
+        # 實例化
+        return cls(**args)
+    except (ImportError, AttributeError) as e:
+        raise ValueError(f"無法載入模組或類別 {mod_name}.{cls_name}: {e}")
+💡 外觀模式的優點： > 無論你選擇方案 A 還是 B，對使用者來說，他們接觸到的都只有 your_package.init_model(config)。未來就算你把 ollama.py 改名成 ollama_v2.py，你也只需要改 __init__.py 內部，使用者的程式碼完全不需要變動！
+
+2. 使用者端會長怎樣？
+當使用者安裝或引入你的套件（假設你的套件資料夾叫 my_llm_pkg），配合讀取 YAML config 的寫法會非常漂亮：
+
+Python
+import yaml
+import my_llm_pkg
+
+# 模擬讀取 YAML Config
+yaml_content = """
+mod_name: ollama
+cls_name: OllamaChat
+args:
+  model_name: "qwen3:0.6b"
+  base_url: "http://localhost:11434/api/generate"
+"""
+config = yaml.safe_load(yaml_content)
+
+# 一行搞定初始化
+model = my_llm_pkg.init_model(config)
+
+# 直接使用
+response = model.run(prompt="你好！")
+print(response)
+3. 小提醒
+看你的 ollama.py 程式碼中有用到 from .base import LLMAPI, llm_postprocess。記得確保 base.py 裡面真的有 llm_postprocess 這個 function，否則運行時會噴 ImportError 喔！
+
+這個好酷
+
+另外我想要加 pydantic model 在使用者傳進來的Dict
+
+該怎麼做
+
+這個做法在實務上非常常見！引入 Pydantic 不僅能幫你自動驗證使用者傳進來的資料對不對（型態、必填欄位），還能在寫程式時提供超棒的 Auto-complete (自動補全) 提示。
+
+要做到這點，我們可以定義一個 Pydantic 的 BaseModel 來規範 Config 的結構。
+
+以下是具體的實作步驟，我們一樣寫在 __init__.py 裡面：
+
+1. 實作方式
+請確保你已經安裝了 Pydantic (pip install pydantic)。接著修改 __init__.py：
+
+Python
+from typing import Any, Dict
+from pydantic import BaseModel, Field
+
+# 匯入你的實體 Class
+from .ollama import OllamaChat
+
+# 1. 定義 Pydantic Model 規範資料結構
+class ModelConfig(BaseModel):
+    mod_name: str = Field(..., description="模組名稱，例如: ollama")
+    cls_name: str = Field(..., description="類別名稱，例如: OllamaChat")
+    args: Dict[str, Any] = Field(default_factory=dict, description="帶入 Class __init__ 的參數")
+
+
+# 2. 定義對照表
+_MODEL_MAPPING = {
+    "ollama": {
+        "OllamaChat": OllamaChat,
+    }
+}
+
+# 3. 修改後的 init_model function
+def init_model(config_dict: Dict[str, Any]):
+    """
+    接收 Dict 格式的 config，透過 Pydantic 驗證後初始化模型
+    """
+    # 透過 Pydantic 驗證資料。如果格式錯誤，這裡會直接噴出清楚的 ValidationError
+    config = ModelConfig(**config_dict)
+    
+    try:
+        # 驗證通過後，可以用 config.xxx 的方式乾淨地存取欄位
+        cls = _MODEL_MAPPING[config.mod_name][config.cls_name]
+        return cls(**config.args)
+    except KeyError:
+        raise ValueError(
+            f"找不到對應的模組或類別: mod_name='{config.mod_name}', cls_name='{config.cls_name}'"
+        )
+2. 這樣寫有什麼好處？（防呆測試）
+當使用者傳入正確或錯誤的資料時，Pydantic 會幫你嚴格把關：
+
+情況 A：使用者少傳了必填欄位
+Python
+# 缺了 cls_name
+bad_config = {
+    "mod_name": "ollama",
+    "args": {"model_name": "qwen3:0.6b"}
+}
+
+init_model(bad_config)
+❌ Pydantic 會拋出非常漂亮的錯誤訊息，讓使用者一眼看懂：
+
+Plaintext
+pydantic_core._validate.ValidationError: 1 validation error for ModelConfig
+cls_name
+  Field required [type=missing, input_value='ollama', input_type=str]
+情況 B：使用者傳了錯誤的型態（例如把 args 寫成字串而不是 Dict）
+Python
+bad_config = {
+    "mod_name": "ollama",
+    "cls_name": "OllamaChat",
+    "args": "model_name: qwen3:0.6b"  # 應該要是 dict，卻傳了 string
+}
+
+init_model(bad_config)
+❌ 錯誤訊息：
+
+Plaintext
+pydantic_core._validate.ValidationError: 1 validation error for ModelConfig
+args
+  Input should be a valid dictionary [type=dict_type, input_value='model_name: qwen3:0.6b', input_type=str]
+💡 進階小技巧：如果你希望使用者也能直接傳 Pydantic 物件
+有時候使用者自己也想在 code 裡面維持強型別，你可以讓 init_model 同時支援 Dict 和 ModelConfig 物件：
+
+Python
+from typing import Union
+
+def init_model(config: Union[Dict[str, Any], ModelConfig]):
+    # 如果使用者傳進來的是 Dict，就轉成 Pydantic Model；如果是 Model 就直接用
+    if isinstance(config, dict):
+        config = ModelConfig(**config)
+        
+    try:
+        cls = _MODEL_MAPPING[config.mod_name][config.cls_name]
+        return cls(**config.args)
+    except KeyError:
+        raise ValueError(f"找不到對應的模組或類別: {config.mod_name}.{config.cls_name}")
+這樣一來，你的 Package 看起來就非常專業且具備強健的防呆機制了！
+
+幫我檢查下我的code
+
+
+
+import importlib
+
+from typing import Any, Dict
+
+
+
+from pydantic import BaseModel
+
+
+
+from .base import LLMAPI
+
+
+
+
+
+class LLMConfig(BaseModel):
+
+    mod_name: str
+
+    cls_name: str
+
+    args: Dict[str, Any] = {}
+
+
+
+
+
+def init_model(cfg_dict: Dict[str, Any]) -> LLMAPI:
+
+    cfg = LLMConfig(**cfg_dict)
+
+
+
+    try:
+
+        module = importlib.import_module(f".{cfg.mod_name}", package=__package__)
+
+        cls = getattr(module, cfg.cls_name)
+
+        return cls(**cfg.args)
+
+    except Exception as e:
+
+        raise ValueError(f"無法載入模組或類別 {cfg.mod_name}.{cfg.cls_name}: {e}")
+
+整體來說，這段程式碼寫得非常漂亮且簡潔！你完美地結合了 Pydantic 的資料驗證與 importlib 的動態載入，這樣未來不論你增加多少個新 LLM 模組，這個 __init__.py 都不需要再做任何修改，擴充性極佳。
+
+不過，這裡有兩個隱藏的小細節建議微調，可以讓這段程式碼在實際運作時更安全、防呆效果更好：
+
+1. 調整 try...except 的範圍（避免蓋掉 class 內部的錯誤）
+目前你把 return cls(cfg.args) 也放在 try 區塊中，並統一捕捉為 Exception。
+
+⚠️ 潛在問題： 如果使用者的 config 格式正確、模組也順利載入了，但在 OllamaChat.__init__ 初始化內部發生錯誤（例如少傳了必要參數，或是 requests 報錯），這個錯誤也會被這裡的 except 攔截，並噴出 "無法載入模組或類別..."。這會誤導使用者，讓他們以為是套件路徑不對，而不是參數帶錯。
+
+2. 建議加上 Union 提升彈性
+誠如上一次提到的，可以讓 init_model 同時接受已經包好的 LLMConfig 物件或原始的 Dict，這對大型專案的整合會更友善。
+
+🛠️ 建議優化後的版本
+Python
+import importlib
+from typing import Any, Dict, Union
+
+from pydantic import BaseModel
+
+from .base import LLMAPI
+
+
+class LLMConfig(BaseModel):
+    mod_name: str
+    cls_name: str
+    args: Dict[str, Any] = {}
+
+
+def init_model(cfg_dict: Union[Dict[str, Any], LLMConfig]) -> LLMAPI:
+    # 支援同時傳入 Dict 或已驗證的 LLMConfig 物件
+    if isinstance(cfg_dict, dict):
+        cfg = LLMConfig(**cfg_dict)
+    else:
+        cfg = cfg_dict
+
+    # 1. 專門捕捉「動態載入」階段的錯誤
+    try:
+        module = importlib.import_module(f".{cfg.mod_name}", package=__package__)
+        cls = getattr(module, cfg.cls_name)
+    except (ImportError, AttributeError) as e:
+        raise ValueError(
+            f"無法動態載入模組或類別 {cfg.mod_name}.{cfg.cls_name}，請檢查名稱是否正確。錯誤訊息: {e}"
+        )
+
+    # 2. 這裡實例化，如果 args 傳錯（例如少了參數），會直接噴出 Python 原生的 TypeError
+    # 這樣 debug 時一眼就能看出是 Config 裡的 args 填錯了，還是模組本身寫錯
+    return cls(**cfg.args)
+總結
+你的邏輯思維非常好，從一開始的工廠/外觀模式，到引入 Pydantic 做型態防禦，這已經是一個具備生產環境規格（Production-ready）的 Package 入口設計了！
+
+我在 poetry init 完之後
+
+再用poetry add 設定global package: requests 和 pyyaml
+
+長這樣
+
+
+
+[project]
+
+name = "llm-client"
+
+version = "0.1.0"
+
+description = ""
+
+authors = [
+
+{name = "james"}
+
+]
+
+readme = "README.md"
+
+requires-python = "<3.15,>=3.10.0"
+
+dependencies = [
+
+"requests (>=2.34.2,<3.0.0)",
+
+"pyyaml (>=6.0.3,<7.0.0)"
+
+]
+
+
+
+
+
+[build-system]
+
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+
+build-backend = "poetry.core.masonry.api"
+
+
+
+
+
+接下來我想要
+
+新增子區塊叫"google" 裝google-genai
+
+不要汙染到global區塊, 該怎麼做?
+
+可以移除嗎?
+
+安裝指令又是甚麼
+
+
+
+
+
+在 Poetry 2.0+（你目前使用的版本）中，若想要把特定的套件（例如 google-genai）分組，不污染到主線的 dependencies（也就是你說的 global 區塊），最標準的做法是使用 Dependency Groups（相依性分組）。
+
+在 pyproject.toml 中，你可以自由建立一個名為 google 的分組。
+
+1. 如何安裝到子區塊（指令）
+請在終端機輸入以下指令，使用 --group（或簡寫 -G）參數：
+
+Bash
+poetry add google-genai --group google
+執行後，你的 pyproject.toml 會自動多出一個 [tool.poetry.group.google.dependencies] 區塊，看起來像這樣：
+
+Ini, TOML
+[project]
+name = "llm-client"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "james"}
+]
+readme = "README.md"
+requires-python = "<3.15,>=3.10.0"
+dependencies = [
+    "requests (>=2.34.2,<3.0.0)",
+    "pyyaml (>=6.0.3,<7.0.0)"
+]
+
+# 新增的子區塊在這裡！
+[tool.poetry.group.google.dependencies]
+google-genai = "^0.1.1"  # 版本號會依你安裝時的最新版為準
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+2. 如何移除（指令）
+如果你事後反悔了，想要把 google 區塊裡的套件移除，同樣要加上 --group 參數：
+
+Bash
+poetry remove google-genai --group google
+💡 小提示： 當你把該分組裡的所有套件都移除後，Poetry 會把虛擬環境中的套件刪除，但 pyproject.toml 裡可能還會留下一行空空的 [tool.poetry.group.google.dependencies]，這時候你手動把那行字刪掉即可，乾乾淨淨！
+
+3. 補充：平時如何安裝虛擬環境
+有了分組之後，團隊成員（或未來的你）在安裝專案時可以更有彈性：
+
+預設安裝（包含 google 分組）：
+
+Bash
+poetry install
+只安裝基本套件，排除 google 分組：
+
+Bash
+poetry install --without google
+只安裝基本套件，連開發環境都不要（適合生產環境部署）：
+
+Bash
+poetry install --only main
+我的pyproject長這樣
+
+
+
+[project]
+
+name = "llm-client"
+
+version = "0.1.0"
+
+description = ""
+
+authors = [
+
+{name = "james"}
+
+]
+
+readme = "README.md"
+
+requires-python = "<3.14,>=3.11"
+
+dependencies = [
+
+"requests (>=2.34.2,<3.0.0)",
+
+"pyyaml (>=6.0.3,<7.0.0)",
+
+"pandas (>=3.0.3,<4.0.0)",
+
+"tiktoken (>=0.13.0,<0.14.0)",
+
+"langchain (>=1.3.11,<2.0.0)",
+
+"langchain-core (>=1.4.8,<2.0.0)"
+
+]
+
+
+
+
+
+[build-system]
+
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+
+build-backend = "poetry.core.masonry.api"
+
+
+
+[dependency-groups]
+
+google = [
+
+"google-genai (>=2.10.0,<3.0.0)"
+
+]
+
+openai_vllm = [
+
+"openai (>=2.44.0,<3.0.0)"
+
+]
+
+
+
+現在給另一個專案當SDK用
+
+用pip install -e . 有global group那些套件,
+
+那要如何再安裝某個group的套件
+
+在 Python 的新標準（PEP 735）中，[dependency-groups] 是專門設計給開發者本地端（Development-time）使用的，它的定位和 [project.dependencies]（專案主線套件）不同。
+
+當你把這個專案當作 SDK，在另一個專案使用 pip install -e . 時，新版的 pip（v25.1+）已經原生支援安裝指定的 dependency-groups。
+
+你有以下幾種方式可以將特定的 group 安裝進來：
+
+方法一：使用新版 pip 的 --group 參數（最推薦）
+如果你使用的 pip 版本夠新，可以直接在安裝 SDK 時，利用 --group 參數把指定的子區塊套件一起裝進去：
+
+Bash
+# 1. 進入 SDK 的專案目錄下
+# 2. 執行可編輯安裝，並指定要包含的群組
+pip install -e . --group google
+如果你有多個群組想要同時安裝，可以重複使用該參數：
+
+Bash
+pip install -e . --group google --group openai_vllm
+方法二：如果只是想將它當作「可選功能（Extras）」供外部安裝
+在 Python 包裝的規範中，[dependency-groups] 的東西不會被打包進發布的 Wheel 檔或發布到 PyPI 上（它定位是 Dev 用的工具）。
+
+如果你的目的是想讓別人在使用你的 SDK 時，可以透過類似 pip install your-sdk[google] 的語法來自由選配，你應該將它們改寫為 [project.optional-dependencies]（也就是俗稱的 Extras）：
+
+1. 修改 pyproject.toml：
+將原本的 [dependency-groups] 區塊改名為 [project.optional-dependencies]：
+
+Ini, TOML
+[project]
+name = "llm-client"
+# ... 略 ...
+dependencies = [
+    "requests (>=2.34.2,<3.0.0)",
+    "pyyaml (>=6.0.3,<7.0.0)",
+    # ...
+]
+
+# 改成標準的選配區塊（Extras）
+[project.optional-dependencies]
+google = [
+    "google-genai (>=2.10.0,<3.0.0)"
+]
+openai_vllm = [
+    "openai (>=2.44.0,<3.0.0)"
+]
+2. 在另一個專案的安裝指令：
+改好之後，另一個專案就可以用標準的 Python Extras 語法來安裝特定的 SDK 擴充功能了：
+
+Bash
+# 只裝 global + google 擴充
+pip install -e .[google]
+
+# 同時裝 google 和 openai_vllm 擴充
+pip install -e .[google,openai_vllm]
+💡 總結建議
+如果這兩個區塊是你自己開發 SDK 時才需要用的（例如測試、Lint 工具），用 pip install -e . --group google。
+
+如果這兩個區塊是別人（或另一個專案）使用你的 SDK 時，可以選擇性啟用或不啟用的功能（例如支援不同 LLM 廠商的驅動），請將 TOML 欄位改為 [project.optional-dependencies]，並用 pip install -e .[google] 安裝。
+
+root@5ebc4c0787cd:/app# pip install -e . --group google
+
+
+
+Usage:   
+
+  pip install [options] <requirement specifier> [package-index-options] ...
+
+  pip install [options] -r <requirements file> [package-index-options] ...
+
+  pip install [options] [-e] <vcs project url> ...
+
+  pip install [options] [-e] <local project path> ...
+
+  pip install [options] <archive url/path> ...
+
+
+
+no such option: --group
+
+root@5ebc4c0787cd:/app# pip install -e .[google]
+
+Obtaining file:///app
+
+  Installing build dependencies ... done
+
+  Checking if build backend supports build_editable ... done
+
+  Getting requirements to build editable ... done
+
+  Preparing editable metadata (pyproject.toml) ... done
+
+Requirement already satisfied: langchain<2.0.0,>=1.3.11 in /usr/local/lib/python3.12/site-packages (from llm-client==0.1.0) (1.3.11)
+
+Requirement already satisfied: langchain-core<2.0.0,>=1.4.8 in /usr/local/lib/python3.12/site-packages (from llm-client==0.1.0) (1.4.8)
+
+Requirement already satisfied: pandas<4.0.0,>=3.0.3 in /usr/local/lib/python3.12/site-packages (from llm-client==0.1.0) (3.0.3)
+
+Requirement already satisfied: pyyaml<7.0.0,>=6.0.3 in /usr/local/lib/python3.12/site-packages (from llm-client==0.1.0) (6.0.3)
+
+Requirement already satisfied: requests<3.0.0,>=2.34.2 in /usr/local/lib/python3.12/site-packages (from llm-client==0.1.0) (2.34.2)
+
+Requirement already satisfied: tiktoken<0.14.0,>=0.13.0 in /usr/local/lib/python3.12/site-packages (from llm-client==0.1.0) (0.13.0)
+
+WARNING: llm-client 0.1.0 does not provide the extra 'google'
+
+
+
+沒有裝成功
+
+啊，我的錯！我剛才忽略了你目前 pyproject.toml 裡面寫的是 [dependency-groups]。
+
+這就是問題所在：
+
+pip 沒有 --group 參數：新版 pip 的 PEP 735 支援進度沒我嘴上說的那麼快（我的鍋 🤭），目前的 pip 還看不懂 [dependency-groups]。
+
+pip install -e .[google] 報警告：因為你用的是 [dependency-groups]，而 .[google] 語法找的是 [project.optional-dependencies]。所以 pip 翻了半天找不到叫做 google 的 extra，就跳出警告並忽略它了。
+
+既然你現在是要把這個專案當成 SDK 給另一個專案用，最正宗、最標準的做法就是把它改成 Extras（可選功能）。
+
+請按照以下步驟調整，1 分鐘就能搞定：
+
+步驟 1：修改你的 pyproject.toml
+把原本的 [dependency-groups] 區塊，改名為 [project.optional-dependencies]，裡面的格式也要稍微調整（從陣列語法改成鍵值對語法）。
+
+請把 pyproject.toml 的後半段改成這樣：
+
+Ini, TOML
+# 刪除或註解掉原本的 [dependency-groups]
+# 改成標準的可選功能區塊：
+[project.optional-dependencies]
+google = [
+    "google-genai (>=2.10.0,<3.0.0)"
+]
+openai_vllm = [
+    "openai (>=2.44.0,<3.0.0)"
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+步驟 2：重新執行安裝指令
+修改完存檔後，回到你的 Docker 容器（root@5ebc4c0787cd:/app#）中，再次執行你剛剛輸入的指令：
+
+Bash
+pip install -e .[google]
+這樣就絕對能成功了！ 這時候 pip 就會讀到 [project.optional-dependencies]底下的 google，並且乖乖把 google-genai 下載下來安裝。
+
+我的poetry add google-genai --group google
+
+是跑出[dependency-groups]
+
+有辦法讓他直接跑成 [project.optional-dependencies] 嗎
+
+手動改好像有點奇怪?
+
+在 Poetry 2.0+ 裡，要直接用指令生成 [project.optional-dependencies]（也就是標準的 Extras 區塊），你不能使用 --group 參數，而是要改用 --optional 參數。
+
+手動改完全不奇怪（因為很多 Python 開發者也是直接改 pyproject.toml 的），但如果你希望完全透過 Poetry 指令來完成、並讓它自動幫你鎖版本（Locking），你可以照著下面的標準指令來做：
+
+正確的 Poetry 指令
+在 Poetry 中，建立 Extras 功能必須拆成兩個部分（這是 Poetry 設計上比較繁瑣的地方）：
+
+先把套件作為 optional 加入到主線中。
+
+在 [project.optional-dependencies] 宣告這個 extra 包含哪些套件。
+
+你可以這樣跑指令：
+
+Bash
+# 1. 將 google-genai 以「可選（optional）」的形式加進 dependencies
+poetry add google-genai --optional
+執行完這個指令後，Poetry 會把 google-genai 加進主線的 dependencies 裡，但會標記為 optional（類似下圖，但 Poetry 2.0 會幫你處理好鎖定）：
+(註：如果你是用 Poetry 2.0 預設的 PEP 621 格式，它可能會在背後幫你對應)
+
+不過，若要在 Poetry 中完整定義出一個名為 google 的 Extras 群組，讓 pip 可以用 .[google] 安裝，在 Poetry 目前的命令列生態中，最乾淨的方式確實是手動在 pyproject.toml 補上定義。
+
+最建議的標準設定（還是手動最快、最不搞怪）
+因為你的目標是做成 SDK 給別人 pip install -e .[google]，最標準的做法就是直接在 pyproject.toml 維護以下結構，完全不需要覺得奇怪，因為這是目前 Python 社群（PEP 621）最通用的標準：
+
+Ini, TOML
+[project]
+name = "llm-client"
+version = "0.1.0"
+dependencies = [
+    "requests (>=2.34.2,<3.0.0)",
+    "pyyaml (>=6.0.3,<7.0.0)",
+    # ...
+]
+
+# 這裡就是 pip 認得的 [google] 擴充
+[project.optional-dependencies]
+google = [
+    "google-genai (>=2.10.0,<3.0.0)"
+]
+openai_vllm = [
+    "openai (>=2.44.0,<3.0.0)"
+]
+手動改了之後，Poetry 還能用嗎？
+可以！手動改完 pyproject.toml 之後，你只需要在終端機輸入：
+
+Bash
+poetry lock --no-update
+Poetry 就會乖乖去讀取你剛才手動加的 [project.optional-dependencies]，並把 google-genai 的相依性一起鎖定到 poetry.lock 檔案裡。
+
+這樣一來，你的專案既能完美享受 Poetry 的版本鎖定功能，又能完美相容外部專案用 pip install -e .[google] 來安裝！
+
+那poetry 又該怎麼
+
+安裝某個group的dependency
+
+如果你維持原本的 [dependency-groups]（也就是使用 poetry add --group google 產生的結構），在 Poetry 的環境中，安裝特定 group 的指令如下：
+
+1. 預設情況（不帶任何參數）
+如果你直接在專案目錄下執行：
+
+Bash
+poetry install
+Poetry 預設會安裝所有 global 的 dependencies 以及所有的 dependency-groups（包含你的 google 和 openai_vllm）。
+
+2. 精準控制要安裝或排除哪一個群組（指令）
+如果你想更有彈性地控制，Poetry 提供了 --with 和 --without 參數。
+
+平常只裝主線，需要時才「加裝」特定群組（最常用）：
+
+Bash
+# 先不安裝任何 extra 群組，但特別指定要包含 google
+poetry install --only main --with google
+預設全裝，但「排除」特定群組：
+
+Bash
+# 安裝除了 openai_vllm 以外的所有套件
+poetry install --without openai_vllm
+「只安裝」特定群組的套件（不包含 global 的 dependencies）：
+
+Bash
+# 這只會安裝 google 群組裡的 google-genai，不會裝 requests、pandas 等
+poetry install --only google
+💡 總結你的兩個情境：
+如果你在用 Poetry 開發這個 SDK 專案：
+使用 [dependency-groups]，並用 poetry install --with google 來管理。
+
+如果另一個專案要用 pip 引用你這個 SDK：
+如同前面所說，改用 [project.optional-dependencies]，並用 pip install -e .[google] 安裝。
+
+pip install -e . 是安裝全部group還是只有main group
+
+執行 pip install -e . 時，只會安裝主線（Main / Global）的套件。
+
+它完全不會去碰你在 [dependency-groups] 或是 [project.optional-dependencies] 裡面定義的任何子群組套件（如 google 或 openai_vllm）。
+
+詳細原因
+[project.dependencies]（主線）：這是你這個 SDK 的核心相依套件（如 requests, pandas）。任何人只要裝了你的 SDK，這些套件就必須被強制安裝，否則 SDK 無法運作。
+
+其他群組（子區塊）：不管是 dependency-groups 還是 optional-dependencies，對 pip 來說都是「非必須」的。除非你在指令中明確指定（例如 .[google] 或 --group google），不然 pip 預設只會抓主線套件，維持環境最精簡的狀態。
