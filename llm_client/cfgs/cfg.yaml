@@ -33,13 +33,6 @@ llm_chat_cfg:
     args:
       api_key: /app/cfgs/api_keys.yaml
       model_name: "gpt-4.1-mini"
-  
-  jumphost:
-    mod_name: jump_host
-    cls_name: JumpHostChatAPI
-    args:
-      base_url_sync: http://192.168.161.30:8007/cloud_api
-      base_url_async: http://192.168.161.30:8007/async_cloud_api
 
 
 llm_emb_cfg:

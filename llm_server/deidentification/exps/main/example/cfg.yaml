@@ -1,0 +1,15 @@
+pipeline_args:
+  deid_cls_name: "ExampleDeid"
+  deid_cls_args:
+    splitter_cfg: {}
+    llm_cfg:
+      mod_name: vllm
+      cls_name: "VLLMChat"
+      args:
+        model_name: "qwen3:0.6b"
+        base_url: "http://172.18.53.104:8106/v1"
+    deid_prompt_path: "/app/exps/main/example/prompts/deid.txt"
+    eval_prompt_path: "/app/exps/main/example/prompts/eval.txt"
+
+pipeline_args_test:
+  txt_folder: "/app/exps/main/example/data"

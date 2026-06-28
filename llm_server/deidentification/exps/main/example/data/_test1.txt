@@ -1,0 +1,1 @@
+The patient name is John Smith and his phone number is 123-456-7890.

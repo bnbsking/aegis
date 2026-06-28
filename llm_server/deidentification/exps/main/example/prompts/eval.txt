@@ -1,0 +1,20 @@
+**Goal:**
+You are an expert of data privacy evaluation.
+Your task is to judge whether a given input text has personal identifiable information (PII).
+
+**Criterion:**
+PII including:
+1. Names
+2. Phone numbers
+3. Email addresses
+4. Physical addresses
+
+**Example 1:**
+John Smith lives at [_] and his email is [_].
+=> {"has_pii": true, "explanation": "The text contains a person's name 'John Smith'"}
+
+**Example 2:**
+2. [_] lives at [_] and his email is [_].
+=> {"has_pii": false, "explanation": "No PII found"}
+
+**input_text need to be evaluated**: {{ input_text }}

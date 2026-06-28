@@ -1,0 +1,16 @@
+services:
+  deid:
+    build:
+      context: ../../
+      dockerfile: llm_server/deidentification/Dockerfile
+    image: 192.168.161.132:5000/deid:v0
+    container_name: deid
+    working_dir: /app
+    ports:
+      - "8006:8006"
+    environment:
+      BASE_CFG_PATH: /app/cfgs/serve.yaml
+    volumes:
+      - ./:/app
+    command: "bash /app/env.sh"
+    
