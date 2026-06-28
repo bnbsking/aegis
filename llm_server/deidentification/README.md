@@ -1,5 +1,5 @@
 # Introduction
-A microservice do
+An API do
 
 1. deidentification
 2. non-identification verification
@@ -32,7 +32,11 @@ Here use example as an example
     ```
 
 2. run script
+    + this API depends on llm_client, see Dockerfile in detail
+
     ```bash
+    docker compose build
+    docker compose up -d
     docker exec -it deid bash
     poetry run python tests/integration/deid/test_main.py \
         -e /app/exps/main/example
