@@ -9,6 +9,7 @@ services:
       - ./:/app
     working_dir: /app
     entrypoint:  ["bash", "serve_chat_llm.sh"]
+    restart: always
     deploy:
       resources:
         reservations:
