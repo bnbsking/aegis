@@ -1,4 +1,5 @@
-from typing import List, Optional, Type
+import json
+from typing import Dict, List, Optional, Type
 
 import httpx
 import requests
@@ -11,7 +12,7 @@ class AzureOpenAIChatAPI(LLMAPI):
         self.api_key = parse_api_key(api_key, "azure_openai")
         self.azure_endpoint = f"https://project-emc-llm-foundry.openai.azure.com/openai/deployments/{model_name}/chat/completions?api-version=2024-10-21"
     
-    def run(self, prompt: str | List, response_format: Optional[Type] = None) -> str:
+    def run(self, prompt: str | List, response_format: Optional[Type] = None) -> str | Dict:
         if isinstance(prompt, str):
             messages = [
                 {"role": "system", "content": "You are a helpful assistant."},
@@ -30,9 +31,12 @@ class AzureOpenAIChatAPI(LLMAPI):
             }
         headers = {"api-key": self.api_key, "Content-Type": "application/json"}
         response = requests.post(self.azure_endpoint, headers=headers, json=data)
-        return response.json()["choices"][0]['message']['content']
+        content = response.json()["choices"][0]['message']['content']
+        if response_format:
+            return json.loads(content)
+        return content
 
-    async def arun(self, prompt: str | List, response_format: Optional[Type] = None) -> str:
+    async def arun(self, prompt: str | List, response_format: Optional[Type] = None) -> str | Dict:
         if isinstance(prompt, str):
             messages = [
                 {"role": "system", "content": "You are a helpful assistant."},
@@ -56,7 +60,10 @@ class AzureOpenAIChatAPI(LLMAPI):
                 headers=headers,
                 json=data
             )
-        return response.json()["choices"][0]["message"]["content"]
+        content = response.json()["choices"][0]["message"]["content"]
+        if response_format:
+            return json.loads(content)
+        return content
 
 
 class AzureOpenAIEmbeddingAPI(LLMAPI):

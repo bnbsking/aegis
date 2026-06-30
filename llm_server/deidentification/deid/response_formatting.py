@@ -23,7 +23,7 @@ def schema_to_model(name: str, schema) -> type:
             fields[key] = (schema_to_model(key, val), ...)
         return create_model(name, **fields)
     else:
-        raise ValueError(f"Unkown type {val}")
+        raise ValueError(f"Unkown type {schema}")
 
 
 def schema_to_json_str(schema: Dict, to_str: bool = True) -> Union[str, Dict]:

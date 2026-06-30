@@ -34,7 +34,7 @@ def llm_postprocess(out: str, to_dict: bool = False) -> str | Dict:
         except:
             pass
         try:
-            out_ = out.replace("null", "None")
+            out_ = out.replace("null", "None").replace("false", "False").replace("true", "True")
             return ast.literal_eval(out_)
         except:
             print(f"Failed to parse LLM output: {out}")

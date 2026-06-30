@@ -24,9 +24,6 @@ class ExampleDeid(BaseDeid):
     2. long context
     """
 
-    raw2deid_cache = LRUCache(capacity=128)  # raw_text: str -> deid_text: str
-    deid2eval_cache = LRUCache(capacity=128)  # deid_text: str -> deid_passed: bool
-    
     def __init__(
             self,
             splitter_cfg: Dict,
@@ -34,6 +31,8 @@ class ExampleDeid(BaseDeid):
             deid_prompt_path: str,
             eval_prompt_path: str
         ):
+        self.raw2deid_cache = LRUCache(capacity=128)  # raw_text: str -> deid_text: str
+        self.deid2eval_cache = LRUCache(capacity=128)  # deid_text: str -> deid_passed: bool
         self.splitter = BaseSplitter(**splitter_cfg)  # for long context
         self.llm = init_model(llm_cfg)
         self.prompt_deid = open(deid_prompt_path, "r").read()
@@ -48,7 +47,9 @@ class ExampleDeid(BaseDeid):
         out_list = []
         for sub_raw_text in sub_raw_text_list:
             prompt = self.prompt_deid.replace("{{ input_text }}", sub_raw_text)
-            out = self.llm.run(prompt).strip()
+            out = self.llm.run(prompt)
+            if isinstance(out, str):
+                out = out.strip()
             out_list.append(out)
         deid_text = "\n".join(out_list)
         self.raw2deid_cache.put(raw_text, deid_text)
@@ -67,7 +68,6 @@ class ExampleDeid(BaseDeid):
             deid_passed = isinstance(out, Dict) and "has_pii" in out and not out["has_pii"]
             if not deid_passed:
                 print(f"Deid failed\ndeid_text={deid_text}\ndeid_eval={out}")
-                deid_passed = False
                 break
         self.deid2eval_cache.put(deid_text, deid_passed)
         return deid_passed

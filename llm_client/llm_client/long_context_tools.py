@@ -4,8 +4,8 @@ from typing import List
 
 try:
     import tiktoken
-except:
-    pass
+except ImportError:
+    tiktoken = None
 
 from .llm_calls import LLMAPI
 
@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 def get_token_count(text: str, model: str = "gpt-4.1") -> int:
+    if tiktoken is None:
+        raise ImportError("tiktoken is not installed. Run: pip install tiktoken")
     enc = tiktoken.encoding_for_model(model)
     return len(enc.encode(text))
 
@@ -107,8 +109,7 @@ class RAGFilter:
         question: short question or instruction
         content: long context to be filtered
         """
-        splitter = BaseSplitter(limit_len=self.limit_len)
-        content_list = splitter.split_text(content)
+        content_list = self.spliter.split_text(content)
         if len(content_list) <= self.top_k:
             return content
         vectors = self.embedder.run_batch(content_list + [question])

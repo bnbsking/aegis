@@ -66,7 +66,14 @@ def cloud_api(r: APIRequest) -> Dict:
     if deid_text.startswith("[Deid_failed]"):
         return {"succeed": False, "deid_text": deid_text, "output": ""}
 
-    prompt = r.base_text.replace("{{ deid_text }}", deid_text)
+    if isinstance(r.base_text, list):
+        prompt = [
+            {**msg, "content": msg["content"].replace("{{ deid_text }}", deid_text)}
+            if isinstance(msg.get("content"), str) else msg
+            for msg in r.base_text
+        ]
+    else:
+        prompt = r.base_text.replace("{{ deid_text }}", deid_text)
     if r.response_format_dict:
         response_format = schema_to_model("custom", r.response_format_dict)
     else:
@@ -77,6 +84,8 @@ def cloud_api(r: APIRequest) -> Dict:
 
 @app.post("/async_cloud_api")
 def async_cloud_api(r: List[APIRequest]) -> List[Dict]:
+    if not r:
+        raise BaseCustomException("Request list must not be empty")
     if not all(ri.key == r[0].key for ri in r):
         raise BaseCustomException("All keys must be the same")
     pipeline = deid_registry.get(r[0].key, None)
@@ -85,13 +94,20 @@ def async_cloud_api(r: List[APIRequest]) -> List[Dict]:
 
     arg_list = []
     deid_text_list = []  # (deid_passed, deid_text)
-    for i, ri in enumerate(r):
+    for ri in r:
         deid_text = pipeline.run(ri.raw_text)
         if deid_text.startswith("[Deid_failed]"):
             deid_text_list.append((False, deid_text))
         else:
             deid_text_list.append((True, deid_text))
-            prompt = ri.base_text.replace("{{ deid_text }}", deid_text)
+            if isinstance(ri.base_text, list):
+                prompt = [
+                    {**msg, "content": msg["content"].replace("{{ deid_text }}", deid_text)}
+                    if isinstance(msg.get("content"), str) else msg
+                    for msg in ri.base_text
+                ]
+            else:
+                prompt = ri.base_text.replace("{{ deid_text }}", deid_text)
             if ri.response_format_dict:
                 response_format = schema_to_model("custom", ri.response_format_dict)
             else:
