@@ -9,12 +9,12 @@ class OllamaChat(LLMAPI):
         self.model_name = model_name
         self.base_url = base_url
 
-    def run(self, prompt: str, response_format: str = "") -> str | Dict:
+    def run(self, prompt: str | List, response_format: str = "") -> str | Dict:
         """Pydantic response requires <json_str> specified in response_format e.g. '{"score": int}'"""
         if response_format:
             prompt_ = f"{prompt}\n**Response Format**: Only output a valid json format as below:\n{response_format}"
         else:
-            prompt_ = prompt
+            prompt_ = str(prompt)
         payload = {"model": self.model_name, "prompt": prompt_, "stream": False}
         response = requests.post(self.base_url, json=payload)
         out = response.json()["response"]

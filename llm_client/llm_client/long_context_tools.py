@@ -54,7 +54,12 @@ class BaseSplitter:
         return raw_text_list
 
 
-class RecursiveSummarizer:
+class BaseSummarizer:
+    def run(self, text: str) -> str:
+        raise NotImplementedError
+
+
+class RecursiveSummarizer(BaseSummarizer):
     def __init__(self, llm: LLMAPI, limit_len: int = int(8192 * 0.85)):
         self.llm = llm
         self.limit_len = limit_len
@@ -67,13 +72,7 @@ class RecursiveSummarizer:
             raw_text_list = self.spliter.split_text(text)
             sum_text_list = []
             for raw_text in raw_text_list:
-                prompt = f"""
-                    **Goal:** Please preserve most the key information of the following content
-                    but slightly remove the redundancy to the half of original length.
-                    i.e. Raw text has {len(raw_text)} characters, make the output has roughly {int(len(raw_text) // 2)} characters.
-
-                    **Content:** {raw_text}
-                """
+                prompt = f"""Please summarize the following text: {raw_text}"""
                 out = self.llm.run(prompt)
                 logger.info(f"single recursive summarization call from {len(raw_text)} to {len(out)} characters")
                 sum_text_list.append(out)
