@@ -4,15 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repo overview
 
-This repo has two top-level components:
+This repo has the following top-level components:
 
-- **`llm_client/`** — a Python SDK for calling LLM APIs (chat + embedding)
-- **`llm_server/`** — three independently deployable servers:
+- **`llm_client/`** — a Python SDK for calling LLM APIs (chat + embedding). Includes a `multichat` module for stateful multi-turn chat session management.
+- **`llm_server/`** — two independently deployable local model servers:
   - `vllm/` — serves local chat/embedding models via vLLM (OpenAI-compatible, port 8106)
   - `ollama/` — serves local models via Ollama (port 11434)
-  - `deidentification/` — FastAPI service (port 8006) that strips PII with a local LLM before forwarding to a cloud LLM
+- **`deidentification/`** — FastAPI service (port 8006) that strips PII with a local LLM before forwarding to a cloud LLM
+- **`multichat_demo/`** — FastAPI + static frontend for manually testing `llm_client`'s `multichat` module (port 8007). Test-only scaffold, not a production service.
 
-Both components run in Docker; all development, installation, and testing happens inside containers.
+Each of these is a separate deployable unit with its own `pyproject.toml`/Dockerfile/docker-compose, and depends on `llm_client` (if at all) via an editable path install done at Docker build time (`poetry add -e /sdk/llm_client`) — `llm_client`'s own `pyproject.toml` never gains a web-framework dependency this way. All development, installation, and testing happens inside containers.
 
 ## Commands
 
@@ -34,17 +35,29 @@ docker exec -it llm_client bash -c "poetry run python tests/integration/llm_clie
 docker exec -it llm_client bash -c "poetry run python tests/integration/llm_client/test_long_context_tools.py"
 ```
 
-### llm_server / deidentification
+### deidentification
 
 ```bash
-# Build context is the repo root (Dockerfile copies both llm_server/deidentification and llm_client)
-cd llm_server/deidentification
+# Build context is the repo root (Dockerfile copies both deidentification and llm_client)
+cd deidentification
 docker compose build
 docker compose up -d
 
 # Run integration tests
 docker exec -it deid bash -c "poetry run python tests/integration/deid/test_main.py -e /app/exps/main/example"
 docker exec -it deid bash -c "poetry run python tests/integration/test_serve.py"
+```
+
+### multichat_demo
+
+```bash
+# Build context is the repo root (Dockerfile copies both multichat_demo and llm_client)
+cd multichat_demo
+docker compose build
+docker compose up -d
+# open http://localhost:8007
+
+# Needs cfgs/api_keys.yaml (gitignored) if cfgs/cfg.yaml points llm_chat_cfg at a cloud backend
 ```
 
 ### Local LLM servers
@@ -84,6 +97,12 @@ cd llm_server/ollama && docker compose up -d
 
 `price.py` — cost estimation using `cfgs/price.csv` (USD per million tokens).
 
+`multichat/` — stateful multi-turn chat session management, designed to be called from stateless request handlers (e.g. FastAPI):
+- `ChatManager` (`manager.py`) — top-level entry point keyed by `account_id`/`session_id`; loads/saves session state around every call, so it holds no in-memory state itself. Methods: `create_session`, `chat`, `edit_and_regenerate`, `edit_title`, `delete_session`, `list_session_id_title`, `get_full_history`.
+- `ChatSession` (`session.py`) — one chat turn's logic: appends to history, summarizes old turns via `RecursiveSummarizer` once `limit_len` (token budget) is exceeded, auto-generates a title on the first turn.
+- `ChatSessionState` / `ChatMemory` (`memory.py`) — the serializable state (`full_history` for display, `memory.history`/`memory.summary` for what's actually sent to the LLM).
+- `JsonChatStorage` (`storage.py`) — default storage backend, one JSON file per `account_id/session_id` under `base_dir` (defaults to `/app/.chat_storage`).
+
 ### deidentification server
 
 The deid pipeline runs in two stages before every cloud API call:
@@ -102,6 +121,10 @@ This is implemented in `deid/deid_collections.py` (`ExampleDeid`) with class-lev
 Both accept `response_format_dict` (a JSON-serialisable schema) which is converted to a Pydantic model by `deid/response_formatting.py` (`schema_to_model`).
 
 The prompt template uses `{{ deid_text }}` as the placeholder for deidentified content.
+
+### multichat_demo server
+
+`app.py` builds one `ChatManager` at startup from `cfgs/cfg.yaml` (`llm_chat_cfg` + `limit_len`) and exposes it over REST (`/api/sessions*`), plus serves a static vanilla HTML/JS/CSS frontend (`static/`) for manual testing — sidebar session list, chat, per-message "edit & regenerate", title rename. No auth, no tests; it exists purely to exercise `llm_client.multichat` end-to-end through a browser.
 
 ### Configuration
 

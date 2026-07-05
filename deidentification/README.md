@@ -1,14 +1,25 @@
 # Introduction
-An API do
 
-1. deidentification
-2. non-identification verification
+A service (gateway) deployed on a computer accessible to cloud API.
 
-before calling cloud API.
+Do deidentification + non-identification verification before calling cloud API.
+
+User should:
+
+1. prepare their
+    + local LLM client
+    + deidentification prompt & evaluation prompt
+    + small dataset
+
+2. pass evaluation test
+
+3. allowed to use cloud API in their project by **sending request through this deidentification service**. Not directly request clound API.
+
+
+**[NOTE] This repo depends on llm_client SDK**
 
 
 # Setup
-+ note: In dockerfile, this repo depends on llm_client SDK
 + build and launch
 
 ```bash
@@ -17,9 +28,10 @@ docker compose up -d
 ```
 
 
-# Part 1 - Evaluation
+# Step 1 - Preparation
 
-1. In `exps/main/` prepare a folder structure.<br>
+In `exps/main/` prepare a folder structure.
+
 Here use example as an example
 
     ```txt
@@ -31,8 +43,9 @@ Here use example as an example
         |_ data/*.txt   (data to be deidentified)
     ```
 
-2. run script
-    + this API depends on llm_client, see Dockerfile in detail
+# Step 2 - Evaluation
+
++ this API depends on llm_client, see Dockerfile in detail
 
     ```bash
     docker compose build
@@ -42,10 +55,10 @@ Here use example as an example
         -e /app/exps/main/example
     ```
 
-    ![](pics/eval_passed.png)
+![](pics/eval_passed.png)
 
 
-# Part 2 - Usage
+# Step 3 - Allowed to use cloud API through the gateway in this repo
 
 The above evaluation endorse custom "local LLM + prompts + data" are truely deidentified. <br>
 Make sure the evaluation is passed before use cloud API !!!
