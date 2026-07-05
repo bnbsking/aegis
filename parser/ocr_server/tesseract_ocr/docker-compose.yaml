@@ -1,0 +1,20 @@
+services:
+  tesseract_ocr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tesseract_ocr:v0
+    container_name: tesseract_ocr
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./:/app
+      - /root/.cache:/root/.cache
+    command: "bash env.sh"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

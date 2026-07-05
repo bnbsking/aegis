@@ -1,0 +1,21 @@
+services:
+  easyocr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: easyocr:v0
+    container_name: easyocr
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./:/app
+      - ../_pdf_examples:/app/_pdf_examples
+      - ../../../../_pytorch/easyocr:/app/_easyocr
+    command: "bash env.sh"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
