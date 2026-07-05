@@ -1,0 +1,9 @@
+llm_chat_cfg:
+  azure_openai:
+    mod_name: azure_openai
+    cls_name: AzureOpenAIChatAPI
+    args:
+      api_key: /app/cfgs/api_keys.yaml
+      model_name: "gpt-4.1-mini"
+
+limit_len: 6963  # int(8192 * 0.85), passed to ChatSession

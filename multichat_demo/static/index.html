@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>multichat_demo</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div id="sidebar">
+    <label>
+      account_id
+      <input id="account-id" value="demo">
+    </label>
+    <button id="new-session">+ New chat</button>
+    <ul id="session-list"></ul>
+  </div>
+
+  <div id="main">
+    <div id="header">
+      <input id="title-input" placeholder="(untitled)" disabled>
+    </div>
+    <div id="messages"></div>
+    <form id="chat-form">
+      <textarea id="chat-input" placeholder="Type a message..." rows="2" disabled></textarea>
+      <button type="submit" id="send-btn" disabled>Send</button>
+    </form>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

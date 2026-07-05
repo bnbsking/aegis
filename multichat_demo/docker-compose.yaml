@@ -1,0 +1,15 @@
+services:
+  multichat_demo:
+    build:
+      context: ../
+      dockerfile: multichat_demo/Dockerfile
+    image: 192.168.161.132:5000/multichat_demo:v0
+    container_name: multichat_demo
+    working_dir: /app
+    ports:
+      - "8007:8007"
+    environment:
+      BASE_CFG_PATH: /app/cfgs/cfg.yaml
+    volumes:
+      - ./:/app
+    command: "bash /app/env.sh"

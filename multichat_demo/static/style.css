@@ -1,0 +1,60 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  display: flex;
+  height: 100vh;
+  font-family: system-ui, sans-serif;
+  color: #222;
+}
+
+#sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: #f4f4f6;
+  border-right: 1px solid #ddd;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+#sidebar label { font-size: 12px; color: #666; display: flex; flex-direction: column; gap: 4px; }
+#sidebar input { padding: 6px; font-size: 13px; }
+#new-session { padding: 8px; cursor: pointer; }
+#session-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+#session-list li {
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+#session-list li:hover { background: #e8e8ec; }
+#session-list li.active { background: #dbe4ff; }
+#session-list li .delete-btn { opacity: 0.5; border: none; background: none; cursor: pointer; }
+#session-list li .delete-btn:hover { opacity: 1; }
+
+#main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#header { padding: 12px; border-bottom: 1px solid #ddd; }
+#title-input { width: 100%; border: none; font-size: 16px; font-weight: 600; background: transparent; }
+#title-input:disabled { color: #999; }
+
+#messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.msg { max-width: 70%; padding: 8px 12px; border-radius: 10px; white-space: pre-wrap; position: relative; }
+.msg.user { align-self: flex-end; background: #dbe4ff; }
+.msg.assistant { align-self: flex-start; background: #f0f0f0; }
+.msg .edit-btn {
+  font-size: 11px;
+  border: none;
+  background: none;
+  color: #667;
+  cursor: pointer;
+  display: block;
+  margin-top: 4px;
+  padding: 0;
+}
+
+#chat-form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid #ddd; }
+#chat-input { flex: 1; resize: none; padding: 8px; font-size: 14px; }
+#send-btn { padding: 0 20px; cursor: pointer; }
