@@ -1,8 +1,8 @@
 # config build by docker compose:
 # 
 # build:
-#     context: ../../
-#     dockerfile: llm_server/deidentification/Dockerfile
+#       context: ../
+#       dockerfile: deidentification/Dockerfile
 
 
 FROM python:3.12-slim
@@ -19,7 +19,7 @@ RUN apt-get update && \
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
 WORKDIR /app
-COPY llm_server/deidentification /app
+COPY deidentification /app
 COPY llm_client /sdk/llm_client
 
 RUN poetry install --no-root --no-interaction --no-ansi
