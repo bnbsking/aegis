@@ -1,0 +1,13 @@
+services:
+  tesseract_ocr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tesseract_ocr:v0
+    container_name: tesseract_ocr
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./:/app
+      - ../../_example_data:/data/_example_data
+    command: "bash env.sh"
