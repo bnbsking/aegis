@@ -1,6 +1,6 @@
 __pycache__/
 .tmp/
 .deprecated/
-models/
+logs/
 
 poetry.lock

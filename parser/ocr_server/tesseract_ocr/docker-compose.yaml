@@ -9,12 +9,5 @@ services:
       - "8002:8002"
     volumes:
       - ./:/app
-      - /root/.cache:/root/.cache
+      - ../../_example_data:/data/_example_data
     command: "bash env.sh"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]

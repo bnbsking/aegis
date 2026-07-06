@@ -1,0 +1,26 @@
+STORE NAME
+123 Sample Street, City, Country
+Phone: (000) 123-4567
+RECEIPT
+Date: 2025-12-04
+Receipt #: 00012345
+Item
+Qty
+Unit Price
+Total
+USB Cable
+2
+$5.00
+$10.00
+Keyboard
+1
+$25.00
+$25.00
+Notebook
+3
+$2.50
+$7.50
+Subtotal: $42.50
+Tax (5%): $2.13
+Total: $44.63
+Thank you for your purchase!
