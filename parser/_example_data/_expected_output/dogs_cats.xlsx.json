@@ -1,0 +1,86 @@
+[
+    [
+        {
+            "dog_id": 1,
+            "name": "Buddy",
+            "breed": "Golden Retriever",
+            "age": 3,
+            "color": "Golden",
+            "weight_kg": 30.5
+        },
+        {
+            "dog_id": 2,
+            "name": "Luna",
+            "breed": "Border Collie",
+            "age": 2,
+            "color": "Black and White",
+            "weight_kg": 18.2
+        },
+        {
+            "dog_id": 3,
+            "name": "Max",
+            "breed": "German Shepherd",
+            "age": 5,
+            "color": "Brown",
+            "weight_kg": 34.0
+        },
+        {
+            "dog_id": 4,
+            "name": "Daisy",
+            "breed": "Poodle",
+            "age": 4,
+            "color": "White",
+            "weight_kg": 12.8
+        },
+        {
+            "dog_id": 5,
+            "name": "Charlie",
+            "breed": "Beagle",
+            "age": 1,
+            "color": "Tri-color",
+            "weight_kg": 9.6
+        }
+    ],
+    [
+        {
+            "cat_id": 1,
+            "name": "Whiskers",
+            "breed": "Domestic Shorthair",
+            "age": 4,
+            "color": "Gray",
+            "weight_kg": 4.2
+        },
+        {
+            "cat_id": 2,
+            "name": "Luna",
+            "breed": "Siamese",
+            "age": 2,
+            "color": "Cream",
+            "weight_kg": 3.6
+        },
+        {
+            "cat_id": 3,
+            "name": "Oliver",
+            "breed": "British Shorthair",
+            "age": 5,
+            "color": "Blue",
+            "weight_kg": 5.8
+        },
+        {
+            "cat_id": 4,
+            "name": "Milo",
+            "breed": "Maine Coon",
+            "age": 3,
+            "color": "Brown Tabby",
+            "weight_kg": 6.9
+        },
+        {
+            "cat_id": 5,
+            "name": "Bella",
+            "breed": "Persian",
+            "age": 6,
+            "color": "White",
+            "weight_kg": 4.9
+        }
+    ]
+]

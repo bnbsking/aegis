@@ -1,0 +1,8 @@
+api_keys.yaml
+poetry.lock
+
+logs/
+
+**/__pycache__/
+
+.pytest_cache/

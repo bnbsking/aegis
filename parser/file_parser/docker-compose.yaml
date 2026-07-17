@@ -1,0 +1,12 @@
+services:
+  file_parser:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: 192.168.161.132:5000/file_parser:v0
+    container_name: file_parser
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - ../_example_data:/data/_example_data
+    command: "bash /app/env.sh"

@@ -1,0 +1,42 @@
+[
+    {
+        "dog_id": 1,
+        "name": "Buddy",
+        "breed": "Golden Retriever",
+        "age": 3,
+        "color": "Golden",
+        "weight_kg": 30.5
+    },
+    {
+        "dog_id": 2,
+        "name": "Luna",
+        "breed": "Border Collie",
+        "age": 2,
+        "color": "Black and White",
+        "weight_kg": 18.2
+    },
+    {
+        "dog_id": 3,
+        "name": "Max",
+        "breed": "German Shepherd",
+        "age": 5,
+        "color": "Brown",
+        "weight_kg": 34.0
+    },
+    {
+        "dog_id": 4,
+        "name": "Daisy",
+        "breed": "Poodle",
+        "age": 4,
+        "color": "White",
+        "weight_kg": 12.8
+    },
+    {
+        "dog_id": 5,
+        "name": "Charlie",
+        "breed": "Beagle",
+        "age": 1,
+        "color": "Tri-color",
+        "weight_kg": 9.6
+    }
+]

@@ -72,6 +72,8 @@ User should:
 
 # parser
 
-1. File parser
+1. File parser (SDK)
 
-2. OCR parser
+2. OCR server (API)
+    + tesseract ocr
+    + easyocr

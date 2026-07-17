@@ -1,0 +1,55 @@
+[
+    {
+        "text": "異常確認-summary",
+        "tables": [
+            [
+                [
+                    "批號",
+                    "24721121"
+                ],
+                [
+                    "工單號",
+                    "1611907"
+                ],
+                [
+                    "料號",
+                    "8CS021QV1V1KB41"
+                ],
+                [
+                    "停機時數\n紀錄",
+                    "無異常"
+                ],
+                [
+                    "生產時間",
+                    "2024/7/21 上午 08:20:00"
+                ],
+                [
+                    "生產紀錄 ",
+                    "無異常"
+                ]
+            ]
+        ],
+        "images": []
+    },
+    {
+        "text": "生產流程資訊-停機時間\n2.調查停機時數-無異常\n3.調查銅面外觀-無異常 \n此異常工單銅面外觀檢驗無異常狀況\n32為基板摺痕，3H為基板刮傷，3HQ為基板刮傷取樣",
+        "tables": [],
+        "images": [
+            {
+                "filename": "image_0.png",
+                "mimetype": "image/png",
+                "sha256": "00a35cdb7ce7942e4d4f1c8d3bcc7784b2de0bf1d60fed9d116f96a606af52cf"
+            },
+            {
+                "filename": "image_1.png",
+                "mimetype": "image/png",
+                "sha256": "ef04dcca9fb4e8ec21211165cbfc56bc655504b03602cb2b3afb02b75295b1b5"
+            },
+            {
+                "filename": "image_2.png",
+                "mimetype": "image/png",
+                "sha256": "831b80a75028e9feb745a3551cbaf922ee7408bc86ec25336365aea1be9c0889"
+            }
+        ]
+    }
+]

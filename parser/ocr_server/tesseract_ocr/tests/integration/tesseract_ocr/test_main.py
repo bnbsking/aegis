@@ -6,10 +6,10 @@ class TestTesseractOCR:
         ocr = TesseractOCR()
 
         pdf_bytes_list = []
-        with open("/data/_example_data/pdf/text_based.pdf", "rb") as f:
+        with open("/data/_example_data/pdf/animals.pdf", "rb") as f:
             pdf_bytes = f.read()
             pdf_bytes_list.append(pdf_bytes)
-        with open("/data/_example_data/pdf/img_only.pdf", "rb") as f:
+        with open("/data/_example_data/pdf/animals_img_only.pdf", "rb") as f:
             pdf_bytes = f.read()
             pdf_bytes_list.append(pdf_bytes)
 
@@ -17,8 +17,8 @@ class TestTesseractOCR:
         print(text_list)
         """
         [
-            ['STORE NAME\n\n123 Sample Street, City, Country\nPhone: (000) 123-4567\n\nRECEIPT\n\nDate: 2025-12-04\nReceipt #: 00012345\n\nItem Unit Price\n\nUSB Cable $5.00\nKeyboard $25.00\nNotebook $2.50\n\nSubtotal: $42.50\nTax (5%): $2.13\n\nTotal: $44.63\n\nThank you for your purchase!\n'],
-            ['Dogs are the best friend of humane\n關\n\n123 dogs are running in the yard.<\n\neI\n\nam ma wa 還 還 點\n-\n\n']
+            ['Dogs are the best friend of human\n\n123 dogs are running in the yard.\n\nAnimal Height Weight\nDog 100 10\nCat 50 5\n\n'],
+            ['圖 =\n\nDogs are the best friend of humane\n\na\n\n123 dogs are running in the yard.\n\n«J\n\n']
         ]
         """
     
@@ -26,10 +26,10 @@ class TestTesseractOCR:
         ocr = TesseractOCR()
 
         image_bytes_list = []
-        with open("/data/_example_data/img/img_only.jpg", "rb") as f:
+        with open("/data/_example_data/img/animals.jpg", "rb") as f:
             image_bytes = f.read()
             image_bytes_list.append(image_bytes)
-        with open("/data/_example_data/img/img_only.png", "rb") as f:
+        with open("/data/_example_data/img/animals.png", "rb") as f:
             image_bytes = f.read()
             image_bytes_list.append(image_bytes)
 

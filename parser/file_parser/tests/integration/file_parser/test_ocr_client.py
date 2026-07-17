@@ -1,20 +1,16 @@
-import os
 import requests
 
+from file_parser.ocr_client import request_ocr
 
-def test_run_pdf_list():
+
+def test_request_ocr_pdf():
     pdf_path1 = "/data/_example_data/pdf/animals.pdf"
     pdf_path2 = "/data/_example_data/pdf/animals_img_only.pdf"
-    url = "http://localhost:8002/run_pdf_list"
+    url = "http://172.24.37.129:8002/run_pdf_list"
 
-    files = [
-        ("files", open(pdf_path1, "rb")),
-        ("files", open(pdf_path2, "rb"))
-    ]
-    data = {"extra_msg": "none"}
-    response = requests.post(url, files=files, data=data)
-
-    out = response.json()
+    with open(pdf_path1, "rb") as f1, open(pdf_path2, "rb") as f2:
+        pdf_bytes_list = [f1.read(), f2.read()]
+    out = request_ocr(pdf_bytes_list, url)
     print(out)
     """
     [
@@ -24,19 +20,14 @@ def test_run_pdf_list():
     """
 
 
-def test_run_img_list():
+def test_request_ocr_img():
     img_path1 = "/data/_example_data/img/animals.jpg"
     img_path2 = "/data/_example_data/img/animals.png"
-    url = "http://localhost:8002/run_img_list"
+    url = "http://172.24.37.129:8002/run_img_list"
 
-    files = [
-        ("files", open(img_path1, "rb")),
-        ("files", open(img_path2, "rb"))
-    ]
-    data = {"extra_msg": "none"}
-    response = requests.post(url, files=files, data=data)
-
-    out = response.json()
+    with open(img_path1, "rb") as f1, open(img_path2, "rb") as f2:
+        img_bytes_list = [f1.read(), f2.read()]
+    out = request_ocr(img_bytes_list, url)
     print(out)
     """
     [
@@ -47,5 +38,5 @@ def test_run_img_list():
 
 
 if __name__ == "__main__":
-    test_run_pdf_list()
-    test_run_img_list()
+    test_request_ocr_pdf()
+    test_request_ocr_img()

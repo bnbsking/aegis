@@ -1,0 +1,12 @@
+dog_id    name            breed  age           color  weight_kg
+      1   Buddy Golden Retriever    3          Golden       30.5
+      2    Luna    Border Collie    2 Black and White       18.2
+      3     Max  German Shepherd    5           Brown       34.0
+      4   Daisy           Poodle    4           White       12.8
+      5 Charlie           Beagle    1       Tri-color        9.6
+cat_id     name              breed  age       color  weight_kg
+    1 Whiskers Domestic Shorthair    4        Gray        4.2
+    2     Luna            Siamese    2       Cream        3.6
+    3   Oliver  British Shorthair    5        Blue        5.8
+    4     Milo         Maine Coon    3 Brown Tabby        6.9
+    5    Bella            Persian    6       White        4.9

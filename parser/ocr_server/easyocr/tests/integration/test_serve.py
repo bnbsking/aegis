@@ -3,8 +3,8 @@ import requests
 
 
 def test_run_pdf_list():
-    pdf_path1 = "/data/_example_data/pdf/text_based.pdf"
-    pdf_path2 = "/data/_example_data/pdf/img_only.pdf"
+    pdf_path1 = "/data/_example_data/pdf/animals.pdf"
+    pdf_path2 = "/data/_example_data/pdf/animals_img_only.pdf"
     url = "http://localhost:8001/run_pdf_list"
 
     files = [
@@ -25,8 +25,8 @@ def test_run_pdf_list():
 
 
 def test_run_img_list():
-    img_path1 = "/data/_example_data/img/img_only.jpg"
-    img_path2 = "/data/_example_data/img/img_only.png"
+    img_path1 = "/data/_example_data/img/animals.jpg"
+    img_path2 = "/data/_example_data/img/animals.png"
     url = "http://localhost:8001/run_img_list"
 
     files = [

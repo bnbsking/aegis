@@ -6,10 +6,10 @@ class TestEasyOCR:
         ocr = EasyOCR()
 
         pdf_bytes_list = []
-        with open("/data/_example_data/pdf/text_based.pdf", "rb") as f:
+        with open("/data/_example_data/pdf/animals.pdf", "rb") as f:
             pdf_bytes = f.read()
             pdf_bytes_list.append(pdf_bytes)
-        with open("/data/_example_data/pdf/img_only.pdf", "rb") as f:
+        with open("/data/_example_data/pdf/animals_img_only.pdf", "rb") as f:
             pdf_bytes = f.read()
             pdf_bytes_list.append(pdf_bytes)
 
@@ -26,10 +26,10 @@ class TestEasyOCR:
         ocr = EasyOCR()
 
         image_bytes_list = []
-        with open("/data/_example_data/img/img_only.jpg", "rb") as f:
+        with open("/data/_example_data/img/animals.jpg", "rb") as f:
             image_bytes = f.read()
             image_bytes_list.append(image_bytes)
-        with open("/data/_example_data/img/img_only.png", "rb") as f:
+        with open("/data/_example_data/img/animals.png", "rb") as f:
             image_bytes = f.read()
             image_bytes_list.append(image_bytes)
 

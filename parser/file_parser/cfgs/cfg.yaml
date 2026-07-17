@@ -1,0 +1,24 @@
+extra_init_args:
+  PDFParser:
+    ocr_mode: hybrid
+    pdf_url: "http://172.24.37.129:8002/run_pdf_list"
+    img_url: "http://172.24.37.129:8002/run_img_list"
+    to_str: false
+
+  WordParser:
+    ocr_mode: hybrid
+    pdf_url: "http://172.24.37.129:8002/run_pdf_list"
+    img_url: "http://172.24.37.129:8002/run_img_list"
+    to_str: false
+
+  ExcelParser:
+    to_str: false
+  
+  DummyParser: {}
+
+  ImageParser:
+    img_url: "http://172.24.37.129:8002/run_img_list"
+
+  MsgParser: {}
+
+  PPTParser: {}
