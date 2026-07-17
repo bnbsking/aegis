@@ -1,0 +1,36 @@
+services:
+  docintel-layout:
+    container_name: docintel-layout
+    image: mcr.microsoft.com/azure-cognitive-services/form-recognizer/layout-4.0
+    env_file:
+      - .env
+    environment:
+      - EULA=accept
+      - billing=${ADI_billing_endpoint}
+      - apiKey=${ADI_key}
+      - Logging__Console__LogLevel__Default=Information
+    ports:
+      - "5000:5000"
+    cpus: "8.0"
+    mem_limit: 24g
+    restart: always
+
+  azure_ocr_fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: azure_ocr_fastapi:v1
+    container_name: azure_ocr_fastapi
+    working_dir: /app
+    ports:
+      - "8003:8003"
+    environment: {}
+    volumes:
+      - ./:/app
+      - ../../_example_data:/data/_example_data
+    command: "bash /app/env.sh"
+
+networks:
+  default:
+    external: true
+    name: my_shared_network

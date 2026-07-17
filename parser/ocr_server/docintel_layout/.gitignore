@@ -1,0 +1,9 @@
+__pycache__/
+_cases/in_case/*/
+_cases/out_case/*/
+.deprecated/
+logs/
+
+poetry.lock
+
+.env

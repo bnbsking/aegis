@@ -1,0 +1,24 @@
+services:
+  emc-adi-poc:
+    build:
+      context: ../docker_change
+      dockerfile: Dockerfile
+    container_name: emc-adi-poc
+    image: emc-adi-poc:local_v2
+    env_file:
+      - .env
+    # depends_on:
+    #   - docintel-layout
+    volumes:
+      - ./input:/data/input
+      - ./output:/data/output
+    
+    # If debug, uncomment the below to Override with `docker compose -f adi-docker-compose.yml run --rm emc-adi-poc --pdf_path "..."
+    # entrypoint: []
+    # command: ["sleep", "infinity"]
+
+networks:
+  default:
+    external: true
+    name: my_shared_network
+    
