@@ -4,7 +4,9 @@ import numpy as np
 from pydantic import create_model
 import yaml
 
+from llm_client.async_funcs import async_executor
 from llm_client.llm_calls import init_model
+from llm_client.llm_calls.base import img_path_to_openai_url
 
 
 with open("/app/cfgs/cfg.yaml", "r") as f:
@@ -22,6 +24,18 @@ class TestOpenAIChatAPI:
         print(out)
         # I'm just a computer program, so I don't have feelings, but I'm here and ready to assist you! How can I help you today?
     
+    def test_run_multi_turn(self):
+        out = self.llm.run(
+            [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "My name is John. How are you?"},
+                {"role": "assistant", "content": "I'm doing great, thank you! How can I assist you today?"},
+                {"role": "user", "content": "What is my name?"}
+            ]
+        )
+        print(out)
+        # Your name is John. How can I help you today, John?
+
     def test_run_pydantic(self):
         fields = {
             "name": (str, ...),
@@ -35,6 +49,36 @@ class TestOpenAIChatAPI:
         )
         print(out)
         # name='Alice Johnson' age=28 hobbies=['reading', 'hiking', 'painting', 'cooking']
+    
+    def test_run_img(self):
+        text = "What's in this picture?"
+        img_path = "/app/tests/integration/llm_client/llm_calls/dog.jpg"
+
+        out = self.llm.run(
+            prompt=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": text},
+                        {"type": "image_url", "image_url": {"url": img_path_to_openai_url(img_path)}},
+                    ]
+                }
+            ]
+        )
+        print(out)
+        # The picture features a dog sitting on a smooth surface. The dog has a black and white coat and appears to be looking directly at the camera with a friendly expression.
+        # In the background, there are blurred objects that resemble bicycles.
+
+    def test_arun(self):
+        out = async_executor(
+            self.llm.arun,
+            [
+                {"prompt": "What is the next day of Sunday?"},
+                {"prompt": "How much is 15 * 12"}
+            ]
+        )
+        print(out)
+        # ['The next day after Sunday is Monday.', '15 * 12 equals 180.']
 
 
 class TestOpenAIEmbeddingAPI:
@@ -49,9 +93,12 @@ class TestOpenAIEmbeddingAPI:
 
 if __name__ == "__main__":
     obj = TestOpenAIChatAPI()
-    obj.test_run()
-    obj.test_run_pydantic()
+    #obj.test_run()
+    #obj.test_run_multi_turn()
+    #obj.test_run_pydantic()
+    obj.test_run_img()
+    #obj.test_arun()
 
-    obj = TestOpenAIEmbeddingAPI()
-    obj.test_run_batch()
+    #obj = TestOpenAIEmbeddingAPI()
+    #obj.test_run_batch()
     

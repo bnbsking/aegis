@@ -19,6 +19,18 @@ class TestOllamaChat:
         print(out)
         # Hi! I'm a language model, and I'm here to help you with questions or provide translation. How can I assist you today? 😊
     
+    def test_run_multi_turn(self):
+        out = self.llm.run(
+            [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "My name is John. How are you?"},
+                {"role": "assistant", "content": "I'm doing great, thank you! How can I assist you today?"},
+                {"role": "user", "content": "What is my name?"}
+            ]
+        )
+        print(out)
+        # I'm glad to help! If you're John, thank you for your name. How can I assist you today?
+
     def test_run_pydantic(self):
         out = self.llm.run(
             "Generate a fake person information",
@@ -39,10 +51,11 @@ class TestOllamaEmbedding:
 
 
 if __name__ == "__main__":
-    test = TestOllamaChat()
-    test.test_run()
-    test.test_run_pydantic()
+    obj = TestOllamaChat()
+    #obj.test_run()
+    obj.test_run_multi_turn()
+    #obj.test_run_pydantic()
 
-    test = TestOllamaEmbedding()
-    test.test_run_batch()
+    #obj = TestOllamaEmbedding()
+    #obj.test_run_batch()
     

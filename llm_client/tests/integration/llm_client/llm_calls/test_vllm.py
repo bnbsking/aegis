@@ -19,6 +19,18 @@ class TestVLLMChat:
         print(out)
         # I'm here to help! How can I assist you today?
     
+    def test_run_multi_turn(self):
+        out = self.llm.run(
+            [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "My name is James, I am an engineer."},
+                {"role": "assistant", "content": "Hi James! Engineer here. How can I assist you today?"},
+                {"role": "user", "content": "What is my name?"}
+            ]
+        )
+        print(out)
+        # Hi there, your name is James! 😊 What can I help you with?
+
     def test_run_pydantic(self):
         out = self.llm.run(
             "Generate a fake person information",
@@ -39,9 +51,10 @@ class TestVLLMEmbedding:
 
 
 if __name__ == "__main__":
-    test = TestVLLMChat()
-    test.test_run()
-    test.test_run_pydantic()
+    obj = TestVLLMChat()
+    #obj.test_run()
+    obj.test_run_multi_turn()
+    #obj.test_run_pydantic()
 
-    test = TestVLLMEmbedding()
-    test.test_run_batch()
+    #obj = TestVLLMEmbedding()
+    #obj.test_run_batch()

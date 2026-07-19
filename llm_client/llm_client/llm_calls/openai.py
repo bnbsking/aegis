@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Type
 
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 from pydantic import BaseModel
 
 from .base import LLMAPI, parse_api_key
@@ -11,6 +11,7 @@ class OpenAIChatAPI(LLMAPI):
         self.model_name = model_name
         api_key_ = parse_api_key(api_key, "openai")
         self.client = OpenAI(api_key=api_key_, base_url=None)
+        self.aclient = AsyncOpenAI(api_key=api_key_, base_url=None)
 
     def _prepare_args(self, prompt: str | List, temperature: float) -> Dict:
         if isinstance(prompt, str):
@@ -44,6 +45,20 @@ class OpenAIChatAPI(LLMAPI):
             response = self.client.chat.completions.parse(**args)
         else:
             response = self.client.chat.completions.create(**args)
+        return self._postprocess(response, response_format)
+    
+    async def arun(
+            self,
+            prompt: str | List,
+            response_format: Optional[Type[BaseModel]] = None,
+            temperature: float = 0.7
+        ) -> str | BaseModel:  # process 1 query (prompt)
+        args = self._prepare_args(prompt, temperature)
+        if response_format:
+            args["response_format"] = response_format
+            response = await self.aclient.chat.completions.parse(**args)
+        else:
+            response = await self.aclient.chat.completions.create(**args)
         return self._postprocess(response, response_format)
 
 

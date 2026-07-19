@@ -1,4 +1,5 @@
 import importlib
+import traceback
 from typing import Any, Dict
 
 from pydantic import BaseModel
@@ -19,4 +20,4 @@ def init_model(cfg_dict: Dict[str, Any]) -> LLMAPI:
         cls = getattr(module, cfg.cls_name)
         return cls(**cfg.args)
     except Exception as e:
-        raise ValueError(f"無法載入模組或類別 {cfg.mod_name}.{cfg.cls_name}: {e}")
+        raise ValueError(f"無法載入模組或類別 {cfg.mod_name}.{cfg.cls_name}: {traceback.format_exc()}, e={e}")

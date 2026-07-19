@@ -3,18 +3,19 @@
 Several common functions for calling llm.
 
 1. **uniform request interface**: `llm_client/llm_client/llm_calls/`
-    + client includes
-        + azure openai
-        + google
-        + ollama
-        + openai
-        + vllm
     + include both
         + chat models
         + embedding models
-    + support
-        + pydantic response
-        + async request (azure openai only)
+
+
+    | chat model   | pydantic response | list input for multiturn chat | image input | async |
+    | -            | -                 | -                             | -           | -     |
+    | azure_openai | V                 | V                             | V           | V     |
+    | google       | V                 | V                             | V           | V     |
+    | ollama       | prompt hint only  | change to pure string only    |             | X     |
+    | openai       | V                 | V                             | V           | V     |
+    | vllm         | prompt hint only  | V                             |             | X     |      
+
 
 2. **long context dealing**: `llm_client/llm_client/long_context_tools.py`
     + recursive summarization

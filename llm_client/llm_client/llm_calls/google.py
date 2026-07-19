@@ -42,6 +42,20 @@ class GoogleChatAPI(LLMAPI):
         )
         return self._postprocess(response, response_format)
 
+    async def arun(
+            self,
+            prompt: str | List,
+            response_format: dict = None,
+            temperature: float = 0.7,
+        ) -> str | Dict:  # process 1 query (prompt) at once
+        cfg = self._prepare_args(response_format, temperature)
+        response = await self.client.aio.models.generate_content(
+            model=self.model_name,
+            contents=prompt,
+            config=cfg
+        )
+        return self._postprocess(response, response_format)
+
 
 class GoogleEmbeddingAPI(LLMAPI):
     def __init__(self, api_key: str, model_name: str):
