@@ -33,6 +33,14 @@ llm_chat_cfg:
     args:
       api_key: /app/cfgs/api_keys.yaml
       model_name: "gpt-4.1-mini"
+  
+  aws:
+    mod_name: aws
+    cls_name: AWSChatAPI
+    args:
+      profile_name: emc-ai-poc
+      region_name: ap-southeast-1
+      model_name: global.anthropic.claude-haiku-4-5-20251001-v1:0
 
 
 llm_emb_cfg:

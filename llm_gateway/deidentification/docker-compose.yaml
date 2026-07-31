@@ -1,8 +1,8 @@
 services:
   deid:
     build:
-      context: ../
-      dockerfile: deidentification/Dockerfile
+      context: ../../
+      dockerfile: llm_gateway/deidentification/Dockerfile
     image: 192.168.161.132:5000/deid:v0
     container_name: deid
     working_dir: /app

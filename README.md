@@ -18,18 +18,15 @@ support services
 Several common functions for calling llm.
 
 1. **uniform request interface**: `llm_client/llm_client/llm_calls/`
-    + client includes
-        + azure openai
-        + google
-        + ollama
-        + openai
-        + vllm
-    + include both
-        + chat models
-        + embedding models
-    + support
-        + pydantic response
-        + async request (azure openai only)
+    
+    | chat model   | pydantic response | list input for multiturn chat | image input | async |
+    | -            | -                 | -                             | -           | -     |
+    | azure_openai | V                 | V                             | V           | V     |
+    | google       | V                 | V                             | V           | V     |
+    | ollama       | prompt hint only  | change to pure string only    |             | X     |
+    | openai       | V                 | V                             | V           | V     |
+    | vllm         | prompt hint only  | V                             | V           | X     |
+    | aws          | V                 | V                             | V           | V     |
 
 2. **long context dealing**: `llm_client/llm_client/long_context_tools.py`
     + recursive summarization
@@ -42,6 +39,10 @@ Several common functions for calling llm.
     + long context dealing
     + web UI demo is requires independent environment locates at `multichat_demo/`
 
++ Remember to **authentication before using AWS**
+    ```bash
+    aws configure sso --use-device-code --profile emc-ai-poc
+    ```
 
 # multichat_demo (Demo)
 
@@ -52,22 +53,29 @@ Note that this is just demo, not production service — no auth, JSON-file stora
 ![ui](multichat_demo/pics/ui.png)
 
 
-# deidentification (API)
+# llm_gateway
 
-A service (gateway) deployed on a computer accessible to cloud API.
++ deidentification (API)
 
-Do deidentification + non-identification verification before calling cloud API.
+    A service (gateway) deployed on a computer accessible to cloud API.
 
-User should:
+    Do deidentification + non-identification verification before calling cloud API.
 
-1. prepare their
-    + local LLM client
-    + deidentification prompt & evaluation prompt
-    + small dataset
+    User should:
 
-2. pass evaluation test
+    1. prepare their
+        + local LLM client
+        + deidentification prompt & evaluation prompt
+        + small dataset
 
-3. allowed to use cloud API in their project by **sending request through this deidentification service**. Not directly request clound API.
+    2. pass evaluation test
+
+    3. allowed to use cloud API in their project by **sending request through this deidentification service**. Not directly request clound API.
+
+
++ jumphost (API)
+
+    Request API to jumphost then redirect to cloud service
 
 
 # parser
@@ -77,3 +85,4 @@ User should:
 2. OCR server (API)
     + tesseract ocr
     + easyocr
+    + document intelligence ocr

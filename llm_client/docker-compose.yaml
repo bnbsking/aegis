@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: 192.168.161.132:5000/llm_client:v0
+    image: 192.168.161.132:5000/llm_client:v1
     container_name: llm_client
     working_dir: /app
     environment:

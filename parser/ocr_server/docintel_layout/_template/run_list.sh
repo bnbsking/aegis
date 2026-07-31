@@ -3,7 +3,7 @@ set -e
 
 FOLDER=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 MAX_RETRIES=3
-TIMER_SECS=10
+TIMER_SECS=480
 
 run_task() {
     local task_name="emc-adi-poc"

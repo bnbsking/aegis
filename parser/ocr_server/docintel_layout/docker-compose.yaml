@@ -19,7 +19,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: azure_ocr_fastapi:v1
+    image: azure_ocr_fastapi:v2
     container_name: azure_ocr_fastapi
     working_dir: /app
     ports:

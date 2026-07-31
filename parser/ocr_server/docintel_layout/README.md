@@ -10,6 +10,9 @@
 
 
 ## Usage
++ Put .env into `./` and `./_template` if git block the files
+
+
 1. Import docker image
     ```bash
     docker load -i 廠商交付docker_image與教學/azure-document-intelligence-layout-v4.tar

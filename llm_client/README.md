@@ -14,7 +14,8 @@ Several common functions for calling llm.
     | google       | V                 | V                             | V           | V     |
     | ollama       | prompt hint only  | change to pure string only    |             | X     |
     | openai       | V                 | V                             | V           | V     |
-    | vllm         | prompt hint only  | V                             |             | X     |      
+    | vllm         | prompt hint only  | V                             | V           | X     |
+    | aws          | V                 | V                             | V           | V     |
 
 
 2. **long context dealing**: `llm_client/llm_client/long_context_tools.py`
@@ -32,8 +33,7 @@ Several common functions for calling llm.
 # SDK Usage
 
 ```bash
-pip install -e .  # default (main)
-pip install -e .[google]  # (main + google api)
+pip install -e .
 ```
 
 + for testing with local serve llm, get host IP by `ip addr show | grep eth0`
@@ -49,6 +49,12 @@ pip install -e .[google]  # (main + google api)
         + `llm_client/tests/integration/llm_client/test_price.py`
     + multi-turn
         + see `../multichat_demo` (different environment)
+
+
++ Remember to **authentication before using AWS**
+    ```bash
+    aws configure sso --use-device-code --profile emc-ai-poc
+    ```
 
 
 # Develop (or debug) mode
