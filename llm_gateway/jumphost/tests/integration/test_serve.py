@@ -113,6 +113,7 @@ class TestGoogle:
             json={
                 "key": "google",
                 "prompt": "How are you?",
+                "extra_args": {"temperature": 0.0}
             }
         )
         print(response.json())
@@ -330,7 +331,7 @@ if __name__ == "__main__":
     # obj.test_cloud_api_arun()
 
     obj = TestGoogle()
-    # obj.test_cloud_api()
+    obj.test_cloud_api()
     # obj.test_cloud_api_multi_turn()
     # obj.test_cloud_api_pydantic()
     # obj.test_cloud_api_img()

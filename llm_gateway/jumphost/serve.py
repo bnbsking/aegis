@@ -69,6 +69,7 @@ class APIRequest(BaseModel):
     key: str
     prompt: str | List[Dict]
     response_format: Optional[Dict] = None
+    extra_args: Optional[Dict] = None
     
 
 @app.post("/cloud_api")
@@ -83,7 +84,7 @@ def cloud_api(r: APIRequest) -> str | Dict:
         prompt_ = recursive_convert_b64dict_to_binary(r.prompt)
     else:
         prompt_ = r.prompt
-    args = {"prompt": prompt_}
+    args = {"prompt": prompt_} | (r.extra_args or {})
 
     if r.response_format is not None:
         if llm["response_format_preprocess_func"] is not None:
@@ -116,7 +117,7 @@ def async_cloud_api(r: List[APIRequest]) -> List[str | Dict]:
             prompt_ = recursive_convert_b64dict_to_binary(ri.prompt)
         else:
             prompt_ = ri.prompt
-        args = {"prompt": prompt_}
+        args = {"prompt": prompt_} | (ri.extra_args or {})
 
         if ri.response_format is not None:
             if llm["response_format_preprocess_func"] is not None:

@@ -26,7 +26,10 @@ llm_chat_cfg:
     args:
       profile_name: emc-ai-poc
       region_name: ap-southeast-1
-      model_name: global.anthropic.claude-haiku-4-5-20251001-v1:0
+      model_name: "global.anthropic.claude-opus-4-5-20251101-v1:0"
+      # "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+      # "global.anthropic.claude-sonnet-4-6"
+      # "global.anthropic.claude-opus-4-5-20251101-v1:0"
 
 
 response_format_preprocess:
