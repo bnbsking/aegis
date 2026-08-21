@@ -4,9 +4,14 @@ from google import genai
 from google.genai.types import EmbedContentConfig, GenerateContentConfig
 
 from .base import LLMAPI, parse_api_key
+from llm_client.input_converter.message import OpenAIMessageToAnyMessage
+from llm_client.input_converter.response_format import PropertiesResponseFormatConverter
 
 
 class GoogleChatAPI(LLMAPI):
+    message_converter = OpenAIMessageToAnyMessage()
+    response_format_converter = PropertiesResponseFormatConverter()
+
     def __init__(self, api_key: str, model_name: str):
         self.model_name = model_name
         api_key_ = parse_api_key(api_key, "google")
@@ -17,10 +22,7 @@ class GoogleChatAPI(LLMAPI):
             return GenerateContentConfig(
                     temperature=temperature,
                     response_mime_type="application/json",
-                    response_schema={
-                        "type": "object",
-                        "properties": response_format,
-                    }
+                    response_schema=self.response_format_converter.convert(response_format)
                 )
         else:
             return GenerateContentConfig(temperature=temperature)
@@ -37,7 +39,7 @@ class GoogleChatAPI(LLMAPI):
         cfg = self._prepare_args(response_format, temperature)
         response = self.client.models.generate_content(
             model=self.model_name,
-            contents=prompt,
+            contents=prompt if isinstance(prompt, str) else self.message_converter.convert(prompt, "google"),
             config=cfg
         )
         return self._postprocess(response, response_format)
@@ -51,7 +53,7 @@ class GoogleChatAPI(LLMAPI):
         cfg = self._prepare_args(response_format, temperature)
         response = await self.client.aio.models.generate_content(
             model=self.model_name,
-            contents=prompt,
+            contents=prompt if isinstance(prompt, str) else self.message_converter.convert(prompt, "google"),
             config=cfg
         )
         return self._postprocess(response, response_format)

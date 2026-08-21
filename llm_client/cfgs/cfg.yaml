@@ -18,21 +18,21 @@ llm_chat_cfg:
     cls_name: GoogleChatAPI
     args:
       api_key: /app/cfgs/api_keys.yaml
-      model_name: "gemini-3.5-flash"
+      model_name: "gemini-3.5-flash-lite"
 
   openai:
     mod_name: openai
     cls_name: OpenAIChatAPI
     args:
       api_key: /app/cfgs/api_keys.yaml
-      model_name: "gpt-4o-mini"
+      model_name: "gpt-5-nano"
   
   azure_openai:
     mod_name: azure_openai
     cls_name: AzureOpenAIChatAPI
     args:
       api_key: /app/cfgs/api_keys.yaml
-      model_name: "gpt-4.1-mini"
+      model_name: "gpt-5.4-mini"
   
   aws:
     mod_name: aws

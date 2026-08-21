@@ -1,4 +1,3 @@
-import numpy as np
 import yaml
 
 from llm_client.async_funcs import async_executor
@@ -6,15 +5,19 @@ from llm_client.llm_calls import init_model
 from llm_client.llm_calls.base import img_path_to_openai_url
 
 
-with open("/app/cfgs/cfg.yaml", "r") as f:
-    cfg = yaml.safe_load(f)
-llm_chat_cfg = cfg["llm_chat_cfg"]
-llm_emb_cfg = cfg["llm_emb_cfg"]
-
-
-class TestAzureOpenAIChatAPI:
+class BaseLLMCall:
     def __init__(self):
-        self.llm = init_model(llm_chat_cfg["azure_openai"])
+        api_key = yaml.safe_load(open("/app/cfgs/api_keys.yaml", "r"))["azure_openai"]
+        self.llm = init_model(
+            {
+                "mod_name": "azure_openai",
+                "cls_name": "AzureOpenAIChatAPI",
+                "args": {
+                    "api_key": api_key,
+                    "model_name": "gpt-4.1-mini"
+                }
+            }
+        )
 
     def test_run(self):
         out = self.llm.run("How are you")
@@ -62,7 +65,7 @@ class TestAzureOpenAIChatAPI:
 
     def test_run_img(self):
         text = "What's in this picture?"
-        img_path = "/app/tests/integration/llm_client/llm_calls/dog.jpg"
+        img_path = "/app/tests/integration/sdk/llm_client/llm_calls/dog.jpg"
 
         out = self.llm.run(
             prompt=[
@@ -94,24 +97,75 @@ class TestAzureOpenAIChatAPI:
         # ['The next day after Sunday is Monday.', '15 * 12 = 180']
 
 
-class TestAzureOpenAIEmbeddingAPI:
+class TestAzureOpenAI(BaseLLMCall):
     def __init__(self):
-        self.llm = init_model(llm_emb_cfg["azure_openai"])
+        api_key = yaml.safe_load(open("/app/cfgs/api_keys.yaml", "r"))["azure_openai"]
+        self.llm = init_model(
+            {
+                "mod_name": "azure_openai",
+                "cls_name": "AzureOpenAIChatAPI",
+                "args": {
+                    "api_key": api_key,
+                    "model_name": "gpt-4.1-mini"
+                }
+            }
+        )
 
-    def test_run_batch(self):
-        out = self.llm.run_batch(["How are you", "I am fine"])
-        out = np.array(out)
-        print(out.shape)  # (2, 1536)
 
+class TestGoogle(BaseLLMCall):
+    def __init__(self):
+        api_key = yaml.safe_load(open("/app/cfgs/api_keys.yaml", "r"))["google_ky"]
+        self.llm = init_model(
+            {
+                "mod_name": "google",
+                "cls_name": "GoogleChatAPI",
+                "args": {
+                    "api_key": api_key,
+                    "model_name": "gemini-3.5-flash"
+                }
+            }
+        )
+
+
+class TestAWS(BaseLLMCall):
+    def __init__(self):
+        self.llm = init_model(
+            {
+                "mod_name": "aws",
+                "cls_name": "AWSChatAPI",
+                "args": {
+                    "profile_name": "emc-ai-poc",
+                    "region_name": "ap-southeast-1",
+                    "model_name": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+                    # "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+                    # "global.anthropic.claude-sonnet-4-6"
+                    # "global.anthropic.claude-opus-4-5-20251101-v1:0"
+                }
+            }
+        )
 
 if __name__ == "__main__":
-    obj = TestAzureOpenAIChatAPI()
+    obj = TestAzureOpenAI()
     # obj.test_run()
     # obj.test_run_multi_turn()
     # obj.test_run_pydantic()
     # obj.test_run_pydantic_raw()
     # obj.test_run_img()
     # obj.test_arun()
+
+    obj = TestGoogle()
+    # obj.test_run()
+    # obj.test_run_multi_turn()
+    # obj.test_run_pydantic()
+    # obj.test_run_pydantic_raw()
+    # obj.test_run_img()
+    # obj.test_arun()
+
+    obj = TestAWS()
+    # obj.test_run()
+    # obj.test_run_multi_turn()
+    # obj.test_run_pydantic()
+    # obj.test_run_pydantic_raw()
+    obj.test_run_img()
+    obj.test_arun()
     
-    # obj = TestAzureOpenAIEmbeddingAPI()
-    # obj.test_run_batch()

@@ -5,9 +5,12 @@ import httpx
 import requests
 
 from .base import LLMAPI, parse_api_key
+from llm_client.input_converter.response_format import PropertiesResponseFormatConverter
 
 
 class AzureOpenAIChatAPI(LLMAPI):
+    response_format_converter = PropertiesResponseFormatConverter()
+
     def __init__(self, api_key: str, model_name: str):
         self.api_key = parse_api_key(api_key, "azure_openai")
         self.azure_endpoint = f"https://project-emc-llm-foundry.openai.azure.com/openai/deployments/{model_name}/chat/completions?api-version=2024-10-21"
@@ -20,13 +23,13 @@ class AzureOpenAIChatAPI(LLMAPI):
             ]
         else:
             messages = prompt
-        data = {"messages": messages, "max_tokens": None}
+        data = {"messages": messages}
         if response_format:
             data["response_format"] = {
                 "type": "json_schema",
                 "json_schema": {
-                    "name": response_format.__name__,
-                    "schema": response_format.model_json_schema()
+                    "name": "ResponseFormat",
+                    "schema": self.response_format_converter.convert(response_format)
                 }
             }
         headers = {"api-key": self.api_key, "Content-Type": "application/json"}
@@ -44,13 +47,13 @@ class AzureOpenAIChatAPI(LLMAPI):
             ]
         else:
             messages = prompt
-        data = {"messages": messages, "max_tokens": None}
+        data = {"messages": messages}
         if response_format:
             data["response_format"] = {
                 "type": "json_schema",
                 "json_schema": {
-                    "name": response_format.__name__,
-                    "schema": response_format.model_json_schema()
+                    "name": "ResponseFormat",
+                    "schema": self.response_format_converter.convert(response_format)
                 }
             }
         headers = {"api-key": self.api_key, "Content-Type": "application/json"}

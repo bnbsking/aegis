@@ -1,0 +1,18 @@
+services:
+  db_client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: db_client:v0
+    container_name: db_client
+    working_dir: /app
+    environment:
+      BASE_CFG_PATH: /app/cfgs/cfg.yaml
+    volumes:
+      - ./:/app
+    command: "bash /app/env.sh"
+
+networks:
+  default:
+    external: true
+    name: my_shared_network

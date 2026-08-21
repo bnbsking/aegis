@@ -1,7 +1,4 @@
-from typing import List
-
 import numpy as np
-from pydantic import create_model
 import yaml
 
 from llm_client.async_funcs import async_executor
@@ -37,19 +34,31 @@ class TestOpenAIChatAPI:
         # Your name is John. How can I help you today, John?
 
     def test_run_pydantic(self):
-        fields = {
-            "name": (str, ...),
-            "age": (int, ...),
-            "hobbies": (List[str], ...)
-        }
-        pymodel = create_model("Person", **fields)
         out = self.llm.run(
             "Generate a fake person information",
-            pymodel,
+            {
+                "name": "str",
+                "age": "int",
+                "hobbies": ["str"]
+            },
+        )
+        print(out)
+
+    def test_run_pydantic_raw(self):
+        out = self.llm.run(
+            "Generate a fake person information",
+            {
+                "properties": {
+                    "name": {"type": "string"},
+                    "age": {"type": "integer"},
+                    "hobbies": {"type": "array", "items": {"type": "string"}}
+                },
+                "type": "object"
+            },
         )
         print(out)
         # name='Alice Johnson' age=28 hobbies=['reading', 'hiking', 'painting', 'cooking']
-    
+
     def test_run_img(self):
         text = "What's in this picture?"
         img_path = "/app/tests/integration/llm_client/llm_calls/dog.jpg"
@@ -59,8 +68,8 @@ class TestOpenAIChatAPI:
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": text},
-                        {"type": "image_url", "image_url": {"url": img_path_to_openai_url(img_path)}},
+                        {"type": "input_text", "text": text},
+                        {"type": "input_image", "image_url": img_path_to_openai_url(img_path)},
                     ]
                 }
             ]
@@ -96,6 +105,7 @@ if __name__ == "__main__":
     #obj.test_run()
     #obj.test_run_multi_turn()
     #obj.test_run_pydantic()
+    #obj.test_run_pydantic_raw()
     obj.test_run_img()
     #obj.test_arun()
 

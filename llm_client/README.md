@@ -8,14 +8,14 @@ Several common functions for calling llm.
         + embedding models
 
 
-    | chat model   | pydantic response | list input for multiturn chat | image input | async |
-    | -            | -                 | -                             | -           | -     |
-    | azure_openai | V                 | V                             | V           | V     |
-    | google       | V                 | V                             | V           | V     |
-    | ollama       | prompt hint only  | change to pure string only    |             | X     |
-    | openai       | V                 | V                             | V           | V     |
-    | vllm         | prompt hint only  | V                             | V           | X     |
-    | aws          | V                 | V                             | V           | V     |
+    | chat model   | pydantic response            | list input for multiturn chat | image input | async | openai input |
+    | -            | -                            | -                             | -           | -     | -            |
+    | azure_openai | simple_dict, properties_dict | V                             | V           | V     | V            |
+    | google       | simple_dict, properties_dict | V                             | V           | V     | V            |
+    | ollama       | prompt_hint_str              | V                             |             | X     | V            |
+    | openai       | simple_dict, properties_dict | V                             | V           | V     | V            |
+    | vllm         | prompt_hint_str              | V                             | V           | X     | V            |
+    | aws          | simple_dict, properties_dict | V                             | V           | V     | V            |
 
 
 2. **long context dealing**: `llm_client/llm_client/long_context_tools.py`

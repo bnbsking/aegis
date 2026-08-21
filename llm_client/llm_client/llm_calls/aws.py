@@ -4,9 +4,13 @@ import aioboto3
 import boto3
 
 from .base import LLMAPI
+from llm_client.input_converter.message import OpenAIMessageToAnyMessage
+from llm_client.input_converter.response_format import PropertiesResponseFormatConverter
 
 
 class AWSChatAPI(LLMAPI):
+    message_converter = OpenAIMessageToAnyMessage()
+    response_format_converter = PropertiesResponseFormatConverter()
     models = [
         "global.anthropic.claude-haiku-4-5-20251001-v1:0",
         "global.anthropic.claude-sonnet-4-6",
@@ -40,16 +44,18 @@ class AWSChatAPI(LLMAPI):
         ) -> str | Dict:
         if isinstance(prompt, str):
             prompt = [{"role": "user", "content": [{"text": prompt}]}]
+        prompt_ = self.message_converter.convert(prompt, "aws")
 
         cfg = {
             "modelId": self.model_name,
-            "messages": prompt,
+            "messages": prompt_,
             "inferenceConfig": {
                 "maxTokens": max_tokens,
                 "temperature": temperature
             }
         }
         if response_format is not None:
+            response_format_ = self.response_format_converter.convert(response_format)
             tool_name = "extract_output"
             tool_config = {
                 "tools": [
@@ -57,7 +63,7 @@ class AWSChatAPI(LLMAPI):
                         "toolSpec": {
                             "name": tool_name,
                             "description": "Return the result following the required JSON schema.",
-                            "inputSchema": {"json": response_format}
+                            "inputSchema": {"json": response_format_}
                         }
                     }
                 ],
@@ -80,16 +86,18 @@ class AWSChatAPI(LLMAPI):
         ) -> str | Dict:
         if isinstance(prompt, str):
             prompt = [{"role": "user", "content": [{"text": prompt}]}]
+        prompt_ = self.message_converter.convert(prompt, "aws")
 
         cfg = {
             "modelId": self.model_name,
-            "messages": prompt,
+            "messages": prompt_,
             "inferenceConfig": {
                 "maxTokens": max_tokens,
                 "temperature": temperature
             }
         }
         if response_format is not None:
+            response_format_ = self.response_format_converter.convert(response_format)
             tool_name = "extract_output"
             tool_config = {
                 "tools": [
@@ -97,7 +105,7 @@ class AWSChatAPI(LLMAPI):
                         "toolSpec": {
                             "name": tool_name,
                             "description": "Return the result following the required JSON schema.",
-                            "inputSchema": {"json": response_format}
+                            "inputSchema": {"json": response_format_}
                         }
                     }
                 ],

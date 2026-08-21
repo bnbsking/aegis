@@ -13,7 +13,6 @@ import yaml
 
 from deid.exceptions import BaseCustomException
 from deid.logs import setup_logging
-from deid.response_formatting import schema_to_model
 from deid.main import DeidPipeline
 
 
@@ -74,11 +73,7 @@ def cloud_api(r: APIRequest) -> Dict:
         ]
     else:
         prompt = r.base_text.replace("{{ deid_text }}", deid_text)
-    if r.response_format_dict:
-        response_format = schema_to_model("custom", r.response_format_dict)
-    else:
-        response_format = None
-    out = llm_cloud.run(prompt=prompt, response_format=response_format)
+    out = llm_cloud.run(prompt=prompt, response_format=r.response_format_dict)
     return {"succeed": True, "deid_text": deid_text, "output": out}
 
 
@@ -108,14 +103,10 @@ def async_cloud_api(r: List[APIRequest]) -> List[Dict]:
                 ]
             else:
                 prompt = ri.base_text.replace("{{ deid_text }}", deid_text)
-            if ri.response_format_dict:
-                response_format = schema_to_model("custom", ri.response_format_dict)
-            else:
-                response_format = None
             arg_list.append(
                 {
                     "prompt": prompt,
-                    "response_format": response_format
+                    "response_format": ri.response_format_dict
                 }
             )
     out_list = async_executor(llm_cloud.arun, arg_list) if arg_list else []

@@ -3,6 +3,7 @@ import yaml
 
 from llm_client.async_funcs import async_executor
 from llm_client.llm_calls import init_model
+from llm_client.llm_calls.base import img_path_to_openai_url
 
 
 with open("/app/cfgs/cfg.yaml", "r") as f:
@@ -30,19 +31,41 @@ class TestAWSChatAPI:
         print(out)
         # Your name is John. You told me that at the start of our conversation.
 
+    def test_run_multi_turn_openai_format(self):
+        out = self.llm.run(
+            [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "My name is John. How are you?"},
+                {"role": "assistant", "content": "I'm doing great, thank you! How can I assist you today?"},
+                {"role": "user", "content": "What is my name?"}
+            ]
+        )
+        print(out)
+
     def test_run_pydantic(self):
-        json_schema = {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"},
-                "age": {"type": "integer"},
-                "hobbies": {"type": "array", "items": {"type": "string"}},
-            },
-            "required": ["name", "hobbies"]
-        }
         out = self.llm.run(
             "Generate a fake person information",
-            response_format=json_schema
+            {
+                "name": "str",
+                "age": "int",
+                "hobbies": ["str"]
+            },
+        )
+        print(out)
+        # {"name":"Emily Johnson","age":29,"hobbies":["painting","cycling","cooking"]}
+
+    def test_run_pydantic_raw(self):
+        out = self.llm.run(
+            "Generate a fake person information",
+            {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "age": {"type": "integer"},
+                    "hobbies": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["name", "hobbies"]
+            }
         )
         print(out)
         # {'name': 'Alex Morgan', 'age': 28, 'hobbies': ['reading', 'hiking', 'photography', 'cooking']}
@@ -65,22 +88,25 @@ class TestAWSChatAPI:
         )
         print(out)
         """
-        # Picture Description
-        This image shows a **Border Collie** dog sitting on a light-colored floor in front of a modern building. The dog has the characteristic Border Collie markings:
-
-        - **Black and white coat** with distinct coloring
-        - **Alert, intelligent expression** with bright eyes
-        - **Tongue out** in a friendly, happy manner
-        - **Pointed ears** standing upright
-
-        The setting appears to be a contemporary outdoor or semi-outdoor space with:
-        - A gray pillar or column in the background
-        - Modern glass windows/storefront
-        - Clean, minimalist architecture
-        - What appears to be a public or commercial area
-
-        The dog is sitting in a well-behaved pose and appears to be a professional or posed photograph, likely for promotional or portfolio purposes
+        This image shows a **Border Collie** dog ...
         """
+
+    def test_run_img_openai_format(self):
+        text = "What's in this picture?"
+        img_path = "/app/tests/integration/llm_client/llm_calls/dog.jpg"
+
+        out = self.llm.run(
+            prompt=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": text},
+                        {"type": "image_url", "image_url": {"url": img_path_to_openai_url(img_path)}},
+                    ]
+                }
+            ]
+        )
+        print(out)
 
     def test_run_pdf(self):
         text = "請幫我總結這份 PDF 的內容。"
@@ -142,7 +168,10 @@ if __name__ == "__main__":
     obj = TestAWSChatAPI()
     obj.test_run()
     obj.test_run_multi_turn()
+    obj.test_run_multi_turn_openai_format()
     obj.test_run_pydantic()
+    obj.test_run_pydantic_raw()
     obj.test_run_img()
+    obj.test_run_img_openai_format()
     obj.test_run_pdf()
     obj.test_arun()

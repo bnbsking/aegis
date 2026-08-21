@@ -3,13 +3,12 @@ services:
     build:
       context: ../../
       dockerfile: llm_gateway/jumphost/Dockerfile
-    image: 192.168.161.132:5000/jumphost:v0
+    image: 192.168.161.132:5000/jumphost:v1
     container_name: jumphost
     working_dir: /app
     ports:
       - "8052:8052"
-    environment:
-      BASE_CFG_PATH: /app/cfgs/cfg.yaml
+    environment: {}
     volumes:
       - ./:/app
     command: "bash /app/env.sh"

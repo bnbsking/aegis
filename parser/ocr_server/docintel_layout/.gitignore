@@ -6,4 +6,4 @@ logs/
 
 poetry.lock
 
-.env
+#.env
